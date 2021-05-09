@@ -1,0 +1,285 @@
+package com.script.parser;
+import java_cup.runtime.Symbol;
+parser code {:
+public static int errors = 0;
+int lineError=0; 
+int columnError=0;
+String tokenError = "";
+String expectedTokens = "";
+
+public void report_error(String message, Object info) { 
+    if (info instanceof String){
+	Symbol s = cur_token;
+	errors++;       
+        if(message.equalsIgnoreCase(".")){
+                message = "Se esperaba alguna forma como "+expectedTokens;
+        }
+        System.err.println("  "+ errors + "==> " + info + " en "+tokenError+": "+ message + " [linea: "+lineError+" columna: "+columnError+"]");
+    }
+    else {
+    	StringBuffer m = new StringBuffer("Error ");
+    	if (info instanceof java_cup.runtime.Symbol) 
+     	   m.append( "("+info.toString()+")" );     
+    	m.append(" : "+message);   
+    	System.err.println(m);
+    }
+}
+
+public void report_error_final(String message, Object info){
+    if (info instanceof String){
+	Symbol s = cur_token;
+	errors++;       
+        
+        if(message.equalsIgnoreCase(".")){
+                message = "Se esperaba alguna forma como "+expectedTokens;
+        }
+        System.err.println("  "+ errors + "==> " + info + ": "+ message);
+    }
+    else {
+    	StringBuffer m = new StringBuffer("Error ");
+    	if (info instanceof java_cup.runtime.Symbol) 
+     	   m.append( "("+info.toString()+")" );     
+    	m.append(" : "+message);   
+    	System.err.println(m);
+    }
+}
+
+@Override
+	public void syntax_error(Symbol symbol){
+	    int line = symbol.left;
+	    int column = symbol.right;
+	    String token = (String) cur_token.value;
+	    //We get the production
+            tokenError = token;
+            lineError = line;
+            columnError = column;
+            expectedTokens = "";
+            for(int index=0; index<expected_token_ids().size() ; index++){
+                //We traduce the token to a form that the user might understand
+                expectedTokens += symbl_name_from_id(expected_token_ids().get(index));
+				expectedTokens += ", ";
+            }
+	}
+
+@Override
+	public void unrecovered_syntax_error(Symbol symbol){
+                report_error_final("Estado Ilegal de Expresion", "Error Sintactico");
+	}
+:}
+
+terminal INIT, END, IF, THEN, ELSE, REPEAT, HUNTIL, INSERT, WHILE, THENWHILE,  TRUE, FALSE, STRING, PROCESS,
+OR, AND, NOT, EQUALIZATION, DIFFERENTIATION, LESSTHAN, GREATERTHAN, LESS, GREATER, SUMA, RESTA, DIV, MULT,
+ASC, DESC, LETPAR_NUM, LETIMPAR_NUM, REVERSE, CARACTER_ALEATORIO, NUM_ALEATORIO, ALERT_INFO, EXIT, INTEGER, DECIMAL, 
+BOOLEAN, CHAR, STRINGVAR,  EQUAL, COLON, SEMICOLON, COMA, OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET,
+CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS, NUMBER, SYMCHAR, GETELEMENT, IDPARAMETER, IDVARIABLE,INVALIDATE, ONLOAD, GLOBAL;
+
+non terminal function, sfunction, s, codigo, linecode, op, variable, variable_re, declarations, declaration, assignations, expression,
+if, elseif, block_elseif, else,block_else, comparation, condition, moreassignations,condition_re, instruccion, repeat, huntil, while, specfunction,
+ variablea,specactions, linecodeif, instruccionif, codigofunction, block_if;
+
+/*precedences*/
+precedence left SUMA, RESTA;
+precedence left DIV, MULT;
+precedence left EQUALIZATION, DIFFERENTIATION, LESS, LESSTHAN, GREATER, GREATERTHAN;
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+precedence left OPEN_PARENTHESIS, CLOSE_PARENTHESIS;
+precedence left ELSE;
+
+start with s;
+
+//Function Start
+function ::= ONLOAD OPEN_PARENTHESIS CLOSE_PARENTHESIS 
+        |PROCESS OPEN_PARENTHESIS CLOSE_PARENTHESIS
+        |error OPEN_PARENTHESIS CLOSE_PARENTHESIS {:System.err.println("Error: e1");parser.report_error("Se esperaba PROCESS_... o ONLOAD" , "Error Sintactico");:}
+        |ONLOAD error CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+        |ONLOAD OPEN_PARENTHESIS error  {:parser.report_error("Se esperaba )" , "Error Sintactico");:}
+        |PROCESS error CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+        |PROCESS OPEN_PARENTHESIS error  {:parser.report_error("Se esperaba )" , "Error Sintactico");:}; 
+
+sfunction ::= function OPEN_BRACKET codigofunction
+                |function error codigofunction {:parser.report_error("Se esperaba [" , "Error Sintactico");:}
+            ;
+
+s ::= sfunction s
+    |/*Empty*/;
+
+//codigo
+
+codigofunction ::= declarations codigofunction
+                |if codigofunction
+                |repeat codigofunction
+                |while codigofunction
+                |specactions codigofunction
+                |error codigofunction {:parser.report_error("Se esperaba una declaracion, accion especial, condicion, ciclo o ]" , "Error Sintactico");:}
+                |CLOSE_BRACKET
+                ;
+
+linecode ::= declarations
+                |repeat
+                |if
+                |while
+                |specactions
+                |error {:parser.report_error("Se esperaba una declaracion, accion especial, condicion o un ciclo " , "Error Sintactico");:};
+
+linecodeif ::= declarations
+                |repeat
+                |while
+                |specactions
+                |error {:parser.report_error("Se esperaba una declaracion, accion especial, ciclo o ]" , "Error Sintactico");:};
+
+codigo ::= declarations codigo 
+                |if codigo
+                |repeat codigo
+                |while codigo
+                |specactions codigo
+                |error codigo{:parser.report_error("Se esperaba una declaracion, accion especial, condicion, ciclo o ]" , "Error Sintactico");:}
+                |SEMICOLON;
+
+
+
+
+//OPERACION
+
+op ::= op SUMA op
+        |op RESTA op
+        |op DIV op
+        |op MULT op
+        |OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+        |NUMBER
+        |DECIMAL
+        |RESTA NUMBER
+        |RESTA DECIMAL
+        |STRING
+        |SYMCHAR
+        |TRUE
+        |FALSE
+        |IDVARIABLE
+        |specfunction
+        |error {:parser.report_error("." , "Error Sintactico");:};
+
+//Asignacion de VARIABLES
+
+
+variable ::= GLOBAL variablea
+        |variablea;
+
+variablea ::= IDVARIABLE variable_re;
+
+variable_re ::= COMA IDVARIABLE variable_re
+                |EQUAL
+                |/*empty*/;
+
+
+//declarations y asignaciones
+declarations ::= INTEGER declaration
+                |DECIMAL declaration
+                |BOOLEAN declaration
+                |STRINGVAR declaration
+                |CHAR declaration 
+                |declaration;
+
+declaration ::= variable assignations;
+
+//assignations
+
+assignations ::= expression COLON
+                |moreassignations;
+
+moreassignations ::= expression AND expression assignations 
+                |COLON
+                |expression error expression assignations {: parser.report_error("Falta &&" , "Error Sintactico");:};
+
+expression ::=  op
+                |GETELEMENT OPEN_PARENTHESIS SYMCHAR CLOSE_PARENTHESIS
+                |GETELEMENT error SYMCHAR CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |GETELEMENT OPEN_PARENTHESIS error CLOSE_PARENTHESIS{:parser.report_error("Se esperaba un char" , "Error Sintactico");:}
+                |GETELEMENT OPEN_PARENTHESIS SYMCHAR error {:parser.report_error("Se esperaba )" , "Error Sintactico");:};
+
+//condicion IF
+
+if ::= block_if elseif else;
+
+elseif ::= elseif block_elseif
+        |/*empty*/;
+
+else ::= ELSE instruccionif
+        |/*empty*/;
+
+block_elseif ::= ELSE IF OPEN_PARENTHESIS condition THEN instruccion
+                |ELSE error OPEN_PARENTHESIS condition THEN instruccion {:parser.report_error("No se encontro la expresion IF" , "Error Sintactico");:}
+                |ELSE IF error condition THEN instruccion{:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |ELSE IF OPEN_PARENTHESIS  condition error instruccion{:parser.report_error("No se encontro la expresion THEN" , "Error Sintactico");:};
+
+
+block_if ::= IF OPEN_PARENTHESIS condition THEN instruccion
+                |IF error condition THEN instruccion {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |IF OPEN_PARENTHESIS condition error instruccion {:parser.report_error("No se encontro la expresion THEN" , "Error Sintactico");:};
+
+
+//condicion 
+
+comparation ::= comparation EQUALIZATION comparation
+                |comparation DIFFERENTIATION comparation
+                |comparation LESSTHAN comparation
+                |comparation LESS comparation
+                |comparation GREATERTHAN comparation
+                |comparation GREATER comparation
+                |OPEN_PARENTHESIS comparation CLOSE_PARENTHESIS
+                |op;
+
+condition ::= comparation condition_re;
+
+condition_re ::= AND comparation condition_re
+                |OR comparation condition_re
+                |NOT comparation condition_re
+                |CLOSE_PARENTHESIS
+                |error comparation condition_re {:parser.report_error("Se esperaba un operador logico (&&, ||, !) o un )" , "Error Sintactico");:};
+        
+//instruccion
+instruccion ::= INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY END
+                |INIT error SEMICOLON codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba {" , "Error Sintactico");:}
+                |INIT OPEN_CURLY error codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON error  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  error END {:parser.report_error("Se esperaba }" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY error {:parser.report_error("Falta END" , "Error Sintactico");:}
+                |linecode;
+
+instruccionif ::= INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY END
+                |INIT error SEMICOLON codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba {" , "Error Sintactico");:}
+                |INIT OPEN_CURLY error codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON error  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  error END {:parser.report_error("Se esperaba }" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY error {:parser.report_error("Falta END" , "Error Sintactico");:}
+                |linecodeif;
+
+//REPEAT
+repeat ::= REPEAT OPEN_PARENTHESIS declarations CLOSE_PARENTHESIS huntil
+        |REPEAT error declarations CLOSE_PARENTHESIS huntil {:parser.report_error("Falta (" , "Error Sintactico");:}
+        |REPEAT OPEN_PARENTHESIS declarations error huntil {:parser.report_error("Falta )" , "Error Sintactico");:};
+
+huntil ::= HUNTIL OPEN_PARENTHESIS op CLOSE_PARENTHESIS instruccion
+        |error OPEN_PARENTHESIS op CLOSE_PARENTHESIS instruccion {:parser.report_error("Se esperaba la palabra HUNTIL" , "Error Sintactico");:}
+        |HUNTIL error op CLOSE_PARENTHESIS instruccion {:parser.report_error("Falta (" , "Error Sintactico");:}
+        |HUNTIL OPEN_PARENTHESIS op error instruccion {:parser.report_error("Falta )" , "Error Sintactico");:};
+
+//WHILE
+while ::= WHILE OPEN_PARENTHESIS condition CLOSE_PARENTHESIS THENWHILE instruccion
+        |WHILE error condition CLOSE_PARENTHESIS THENWHILE instruccion {:parser.report_error("Falta (" , "Error Sintactico");:}
+        | WHILE OPEN_PARENTHESIS condition error THENWHILE instruccion {:parser.report_error("Falta )" , "Error Sintactico");:}
+        |WHILE OPEN_PARENTHESIS condition CLOSE_PARENTHESIS error instruccion {:parser.report_error("Se esperaba THENWHILE" , "Error Sintactico");:} ;
+
+//Funciones ESPECIALES
+specfunction ::= ASC OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+                |DESC OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+                |LETPAR_NUM OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+                |LETIMPAR_NUM OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+                |REVERSE OPEN_PARENTHESIS op CLOSE_PARENTHESIS
+                |CARACTER_ALEATORIO OPEN_PARENTHESIS CLOSE_PARENTHESIS
+                |NUM_ALEATORIO OPEN_PARENTHESIS CLOSE_PARENTHESIS
+                ;
+
+specactions ::= ALERT_INFO OPEN_PARENTHESIS op CLOSE_PARENTHESIS COLON
+                |EXIT OPEN_PARENTHESIS CLOSE_PARENTHESIS COLON
+                |INSERT OPEN_PARENTHESIS SYMCHAR CLOSE_PARENTHESIS COLON;

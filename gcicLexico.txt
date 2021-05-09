@@ -1,0 +1,137 @@
+LEXEMA      *           TOKENS  
+**************************************
+ETIQUETAS INSENSITIVE*****************************
+**************************************
+C_GCIC      *   C_GCIC
+C_HEAD      *   C_HEAD
+C_TITLE     *   C_TITLE
+C_LINK      *   C_LINK
+C_BODY      *   C_BODY
+C_SPAM      *   C_SPAM
+C_INPUT     *   C_INPUT
+C_TEXTAREA  *   C_TEXTAREA
+C_SELECT    *   C_SELECT
+C_OPTION    *   C_OPTION    
+C_DIV       *   C_DIV
+C_IMG       *   C_IMG
+C_BR        *   C_BR
+C_BUTTON    *   C_BUTTON
+C_H1        *   C_H1
+C_P         *   C_P
+*************************************
+Parametros SENSITIVE***************************
+*************************************
+href        *   HREF
+background  *   BACKGROUND
+color       *   COLOR
+font-size   *   FONT-SIZE
+font-family *   FONTFAMILY
+text-align  *   TEXTALIGN
+type        *   TYPE
+text        *   TEXT
+number      *   NUMBER
+radio       *   RADIO
+checkbox    *   CHECKBOX
+id          *   ID
+name        *   NAME
+cols        *   COLS
+rows        *   ROWS
+class       *   CLASS
+row         *   ROW
+column      *   COLUMN
+src         *   SRC
+width       *   WIDTH
+height      *   HEIGHT
+alt         *   ALT
+onclick     *   ONCLICK
+*************************************
+Simbolos*****************************
+*************************************
+\"[^ \"]\"      *   STRING
+=               *   EQUAL
+;               *   COLON
+:               *   SEMICOLON
+,               *   COMA
+{               *   OPEN_CURLY
+}               *   CLOSE_CURLY
+[               *   OPEN_BRACKET
+]               *   CLOSE_BRACKET
+(               *   OPEN_PARENTHESIS
+)               *   CLOSE_PARENTHESIS
+["-"]?[0-9]+    *
+["."[0-9]+]?    *   NUMBER
+\'[^\']\'       *   SYMCHAR
+**************************************
+OPERADORES RELACIONALES***************
+**************************************
+==              *   EQUALIZATION
+!=              *   DIFFERENTIATION
+<=              *   LESSTHAN
+>=              *   GREATERTHAN
+<               *   LESS
+>               *   GREATER
+***************************************
+OPERADORES LOGICOS*********************
+***************************************
+||              *   OR
+&&              *   AND
+!               *   NOT
+***************************************
+OPERADORES ARITMETICOS*****************
+***************************************
++               *   SUMA
+-               *   RESTA
+*               *   MULT
+/               *   DIV
+***************************************
+FUNCIONES ESPECIALES*******************
+***************************************
+ASC             *   ASC
+DESC            *   DESC
+LETPAR_NUM      *   LETPAR_NUM
+LETIMPAR_NUM    *   LETIMPAR_NUM
+REVERSE         *   REVERSE
+CARACTER_ALEATORIO* CARACTER_ALEATORIO
+NUM_ALEATORIO   *   NUM_ALEATORIO
+ALERT_INFO      *   ALERT_INFO
+EXIT            *   EXIT
+***************************************
+DECLARACION Y ASIGNACION DE VARIABLES**
+***************************************
+["_"|"-"|"$"][^ \n\r\t]   *   IDPARAMETER
+[aA-zZ][^ \n\r\t]           *   IDVARIABLE
+***************************************
+ACCESO A IDENTIFICADORES DEL LENGUAJE**
+DE ETIQUETAS***************************
+***************************************
+getElemenById   *   GETELEMENT
+***************************************
+PALABRAS RESERVADAS********************
+***************************************
+INIT            *   INIT
+END             *   END
+IF              *   IF
+THEN            *   THEN
+ELSE            *   ELSE
+REPEAT          *   REPEAT
+HUNTIL          *   HUNTIL
+INSERT          *   INSERT
+WHILE           *   WHILE
+THENWHILE       *   THENWHILE
+true            *   TRUE
+false           *   FALSE
+***************************************************************************************************************
+*************************************ALTO NIVEL****************************************************************
+***************************************************************************************************************
+C_SCRIPTING                 *   C_SCRIPTING
+PROCESS_[^ \n\t\r]          *   PROCESS
+ON_LOAD                     *   ONLOAD (SOLO PUEDE VENIR UNA VEZ)
+******************************************************************
+Datos*************************************************************
+******************************************************************
+integer             *   INTEGER
+decimal             *   DECIMAL
+boolean             *   BOOLEAN 
+char                *   CHAR
+string              *   STRINGVAR
+
