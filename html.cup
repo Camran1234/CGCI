@@ -8,17 +8,18 @@ import java.util.ArrayList;
 
 
 parser code {:
-        ErrorHandler errorHandler = new ErrorHandler();
-        SymbolTable symbolTable = new SymbolTable();
 
+        ErrorHandler errorHandler = new ErrorHandler();
+        HtmlData htmlData = new HtmlData();
+        SymbolTable table = new SymbolTable();
         public int errors = 0;
         int lineError=0; 
         int columnError=0;
         String tokenError = "";
         String expectedTokens = "";
 
-        public SymbolTable getSymbolTable(){
-                return symbolTable;
+        public HtmlData getHtmlData(){
+                return htmlData;
         }
 
         //Method to throw Errors
@@ -65,8 +66,7 @@ public void report_error_final(String message, Object info){
 	public void syntax_error(Symbol symbol){
 	    int line = symbol.left;
 	    int column = symbol.right;
-	    String token = (String) cur_token.value;
-	    //We get the production
+	    String token = (String) cur_token.value;        new SymbolTable();
             tokenError = token;
             lineError = line;
             columnError = column;
@@ -90,7 +90,7 @@ C_BODY, C_SPAM, C_INPUT, C_TEXTAREA, C_SELECT, C_OPTION, C_DIV, C_IMG, C_BR, C_B
 FONTSIZE, FONTFAMILY, TEXTALIGN, TYPE, TEXT, NUMBER, RADIO, CHECKBOX, IDE, NAME, COLS, ROWS, CLASS, ROW, COLUMNS, SRC, WIDTH,
 HEIGHT, ALT, ONCLICK, SPACE, OPTION, STRING, OPEN_BRACKET, CLOSE_BRACKET,CHAR;
 
-non terminal w, tags, starttag, text, s, t, o, z, startetiquete, etiquete, optionselec, scripts, scriptf, htmls, htmlf, heads, headf, titles, 
+non terminal w, tags, starttag, text, s, t, o, startetiquete, etiquete, optionselec, scripts, scriptf, htmls, htmlf, heads, headf, titles, 
 titlef, links, linkf, bodys, bodyf, spams, spamf, inputs, inputf, textars, textarf, selects, selectf, options, optionf,
 divs, divf, images, imagef, brs, buttons, buttonf, htexts, htextf, ps, pf, phtml, plink, pbody, pspam, pinput, ptextar, pselect,
 pdiv, pimg, pbutton, phtext, pp, plaintetiquete, plainparemeter, plaintext, tags_re, optionselec_re, o_a,
@@ -159,13 +159,17 @@ texto ::= GREATER:e1 {:RESULT=e1;:}
 
 s ::= plaintext:e1 s:e2 {:
                                 if(e1 instanceof CText){
-                                        symbolTable.pushTag((Tag)e1);
+                                        htmlData.pushTag((Tag)e1);
                                 }
                                 if(e2!=null){
-                                      symbolTable.pushTag((Tag)e2);
+                                      htmlData.pushTag((Tag)e2);
                                 }
                         :}
-    |starttag:e1        {: if(e1!=null){symbolTable.pushTag((Tag)e1);} :}
+    |starttag:e1   s:e2     {: if(e1!=null){htmlData.pushTag((Tag)e1);}
+                                if(e2 != null){
+                                        htmlData.pushTag((Tag)e2);
+                                }
+     :}
     |/*empty*/;
 
 t ::= plaintext:e1 t:e2  {: if(e2!=null){
@@ -215,11 +219,7 @@ o_a ::=  DIV
          :}
         ;
 
-z ::= plaintext:e1 z:e2 
-    |LESS:e1 z:e2  
-    |/*empty*/ ;
-
-startetiquete ::= htmls:s t:tags htmlf z:dummyText {:
+startetiquete ::= htmls:s t:tags htmlf {:
                                                 if(s instanceof CGcic){
                                                         CGcic ctag = (CGcic)s;
                                                         ctag.pushTags((ArrayList)tags);
@@ -227,7 +227,7 @@ startetiquete ::= htmls:s t:tags htmlf z:dummyText {:
                                                 }
                                                 RESULT = s;                                                
                                         :}
-                |etiquete:s   {:parser.report_error("Se esperaba una etiqueta <C_GCIC>" , "Error Sintactico");
+                |etiquete:s   {:
                                 RESULT = s;
                                 :};
 

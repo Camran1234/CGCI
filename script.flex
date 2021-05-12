@@ -11,7 +11,7 @@ import java_cup.runtime.Symbol;
 %public
 
 %{
-
+        
 %}
 
 LineTerminator = \r|\n|\r\n
@@ -182,5 +182,5 @@ Process = [P][R][O][C][E][S][S][_][^ \\(\\)\n\t\r]+
     {Commentary}    {/*empty*/}
     {BlockCommentary} {/*empty*/}
 }
-[^-=:\\{\\}\\(\\)"[""]""\"""\'"\n\r\t\s<>/[0-9];]+ {System.out.println("Token: INVALIDATE, Lexema: "+yytext());}
+[^-=:\\{\\}\\(\\)"[""]""\"""\'"\n\r\t\s<>/[0-9];]+ {System.out.println("Token: INVALIDATE, Lexema: "+yytext()); ErrorHandler.lexicalErrorsScript(new LexicalError("Texto no reconocido", yytext(), yyline +1, yycolumn +1));}
 
