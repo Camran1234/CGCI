@@ -17,6 +17,10 @@ public class SyntaxError extends Error{
         this.info = info;
     }
     
+    
+    
+    
+    
     public String getMessage(){
         if(line==-1 && column ==-1){
             return (" +)"+ info + " en "+tokenError+": "+ mensaje + " [linea: cerca del final, columna: cerca del final");

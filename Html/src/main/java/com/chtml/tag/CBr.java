@@ -10,10 +10,19 @@ package com.chtml.tag;
  * @author camran1234
  */
 public class CBr extends Tag{
+
+    public CBr(int line, int column) {
+        super(line, column);
+    }
     
     
     @Override
     public String writeCode(){
-        return "<br>";
+        return "<br>\n";
+    }
+    
+    @Override
+    public void execute(){
+        
     }
 }

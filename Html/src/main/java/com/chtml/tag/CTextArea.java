@@ -14,6 +14,9 @@ import com.chtml.error.SemanticError;
  */
 public class CTextArea extends Tag{
     
+    public CTextArea(int line, int column){
+        super(line, column);
+    }
     
     public void setCols(String cols, String line, String column){
         if(!cols.isEmpty()){
@@ -71,6 +74,26 @@ public class CTextArea extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<textarea ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                string.append(tags.get(index).writeCode());
+            }
+        }
+        string.append("</textare>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

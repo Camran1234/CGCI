@@ -14,6 +14,10 @@ import com.chtml.error.SemanticError;
  */
 public class CButton extends Tag{
     
+    public CButton(int line, int column){
+        super(line, column);
+    }
+    
      public void setBackground(String background, String line, String column){
         if(!background.isEmpty()){
             this.background.setValue(background);
@@ -80,6 +84,27 @@ public class CButton extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<button ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        for(int index=0; index<tags.size(); index++){
+            if(checkTags(this, tags.get(index))){
+                string.append(tags.get(index).writeCode());
+            }
+        }
+        string .append("</button>\n");
+        return string.toString();
     }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
+    }
+    
 }

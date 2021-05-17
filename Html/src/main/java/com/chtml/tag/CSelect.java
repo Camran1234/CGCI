@@ -14,6 +14,10 @@ import com.chtml.error.SemanticError;
  */
 public class CSelect extends Tag{
     
+    public CSelect(int line, int column){
+        super(line, column);
+    }
+    
     public void setColor(String color, String line, String column){
         if(!color.isEmpty()){
             this.color.setValue(color);
@@ -61,6 +65,26 @@ public class CSelect extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<select ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this,tags.get(index))){
+                string.append(tags.get(index).writeCode());
+            }
+        }
+        string.append("</select>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

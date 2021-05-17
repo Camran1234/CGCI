@@ -13,6 +13,10 @@ import com.chtml.error.SemanticError;
  * @author camran1234
  */
 public class CGcic extends Tag{
+
+    public CGcic(int line, int column) {
+        super(line, column);
+    }
     
     public void setId(String id, String line, String column){
         if(!id.isEmpty()){
@@ -34,6 +38,40 @@ public class CGcic extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<html>\n");
+        for(int index=0; index<tags.size(); index++){
+            string.append(tags.get(index).writeCode());
+        }
+        string.append("</html>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        int head=0;
+        int body=0;
+        //check
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(tags.get(index) instanceof CHead){
+                if(head >0){
+                    ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar mas de una etiqueta C_Head","C_Head","Eliminar etiqueta", tags.get(index).line, tags.get(index).column));
+                }
+                head++;
+            }else if(tags.get(index) instanceof CBody){
+                if(body>0){
+                    ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar mas de una etiqueta C_Body","C_Body","Eliminar etiqueta", tags.get(index).line, tags.get(index).column));
+                }
+                body++;
+            }else if(tags.get(index) instanceof CGcic){
+                ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar una etiqueta CGcic","CGcic","eliminar etiqueta",tags.get(index).line, tags.get(index).column));
+            }else{
+                if(this.checkTags(this, tags.get(index))){
+                    tags.get(index).execute();
+                }
+            }
+            
+        }
     }
 }

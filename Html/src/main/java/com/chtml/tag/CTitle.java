@@ -11,9 +11,31 @@ package com.chtml.tag;
  */
 public class CTitle extends Tag {
     
+    public CTitle(int line, int column){
+        super(line, column);
+    }
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        
+        string.append("<title>");
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                string.append(tags.get(index).writeCode());
+            }
+        }
+        string.append("</title>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

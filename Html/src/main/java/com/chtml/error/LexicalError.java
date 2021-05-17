@@ -16,6 +16,11 @@ public class LexicalError extends Error{
         this.info = "Error Lexico";
     }
     
+    public LexicalError(String mensaje, String tokenError, int line, int column, boolean script){
+        super(mensaje, tokenError, line, column, script);
+        this.info = "Error Lexico";
+    }
+    
     public String getMessage(){
         if(line==-1 && column ==-1){
             return (" +)"+ info + " en "+tokenError+": "+ mensaje + " [linea: cerca del final, columna: cerca del final");

@@ -14,6 +14,10 @@ import com.chtml.error.SemanticError;
  */
 public class CImg extends Tag {
     
+    public CImg(int line, int column){
+        super(line, column);
+    }
+    
     
     public void setSrc(String src, String line, String column){
         if(!src.isEmpty()){
@@ -62,6 +66,20 @@ public class CImg extends Tag {
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<img ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

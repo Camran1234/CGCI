@@ -13,6 +13,10 @@ import com.chtml.error.SemanticError;
  * @author camran1234
  */
 public class CInput extends Tag{
+
+    public CInput(int line, int column) {
+        super(line, column);
+    }
     
     public void setType(String type, String line, String column){
         if(!type.isEmpty()){
@@ -70,6 +74,26 @@ public class CInput extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<input ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                            string.append(tags.get(index).writeCode());
+            }
+        }
+        string.append("</input>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

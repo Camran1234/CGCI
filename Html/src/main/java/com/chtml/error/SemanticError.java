@@ -10,13 +10,13 @@ package com.chtml.error;
  * @author camran1234
  */
 public class SemanticError extends Error{
-    String solution="";
+    
     
     public SemanticError(String mensaje, String tokenError,String solution, int line, int column){
         super(mensaje, tokenError, line, column);
         this.info = "Error Semantico";
         this.solution=solution;
-    }
+    }        
     
     public String getMessage(){
         if(line==-1 && column ==-1){

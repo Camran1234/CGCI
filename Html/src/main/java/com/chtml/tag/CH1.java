@@ -13,6 +13,10 @@ import com.chtml.error.SemanticError;
  * @author camran1234
  */
 public class CH1 extends Tag{
+
+    public CH1(int line, int column) {
+        super(line, column);
+    }
     public void setColor(String color, String line, String column){
         if(!color.isEmpty()){
             this.color.setValue(color);
@@ -65,6 +69,26 @@ public class CH1 extends Tag{
     
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<h1 ");
+        string.append(this.getStringTags());
+        string.append(">\n");
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                string.append(tags.get(index).writeCode());
+            }
+        }
+        string.append("</h1> \n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        this.findErrors();
+        for(int index=0; index<tags.size(); index++){
+            if(this.checkTags(this, tags.get(index))){
+                tags.get(index).execute();
+            }
+        }
     }
 }

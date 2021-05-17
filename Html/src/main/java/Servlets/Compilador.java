@@ -5,6 +5,7 @@
  */
 package Servlets;
 
+import com.chtml.error.ErrorHandler;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import com.chtml.html.*;
+import com.chtml.table.HtmlData;
 import com.chtml.table.SymbolTable;
 /**
  *
@@ -35,19 +37,23 @@ public class Compilador extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         String code = request.getParameter("code");
-        SymbolTable symbolTable=null;
+        HtmlData htmlData=null;
+        SymbolTable table = new SymbolTable();
         try {
+        new ErrorHandler().resetHandler();
+        //get the code
         StringReader reader = new StringReader(code);
         ChtmlLex lexic = new ChtmlLex(reader);
         HtmlParser parser = new HtmlParser(lexic);
+        new SymbolTable().clearTable();;
         parser.parse();
-         symbolTable = parser.getSymbolTable();
+         htmlData = parser.getHtmlData();
+         htmlData.execute();
+         
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(symbolTable!=null){
-            symbolTable.mojoFunction();
-        }
+        
         request.getSession().setAttribute("newCode", code);
         response.sendRedirect("./index.jsp");
     }

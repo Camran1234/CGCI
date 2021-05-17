@@ -12,12 +12,19 @@ package com.chtml.tag;
 public class CText extends Tag{
     
     
-    public CText(String text,String line, String column){
-        this.setText(text, line, column);
+    
+    public CText(String text,int line, int column){
+        super(line, column);
+        this.text.pushValue(text);
     }
     
     @Override 
     public String writeCode(){
-        return "";
+        return text.value();
+    }
+    
+    @Override
+    public void execute(){
+        
     }
 }

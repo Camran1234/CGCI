@@ -11,8 +11,23 @@ package com.chtml.tag;
  */
 public class COption extends Tag{
     
+    public COption(int line, int column){
+        super(line, column);
+    }
+    
     @Override
     public String writeCode(){
-        return "";
+        StringBuffer string = new StringBuffer();
+        string.append("<option ");
+        string.append("value=\""+text.value()+"\" ");
+        string.append(">\n");
+        string.append(this.getStringTags());
+        string.append("</option>\n");
+        return string.toString();
+    }
+    
+    @Override
+    public void execute(){
+        
     }
 }
