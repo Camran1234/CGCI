@@ -4,20 +4,34 @@
     Author     : camran1234
 --%>
 
+<%@page import="com.chtml.table.HolderCaptcha"%>
+<%@page import="com.chtml.table.Holder"%>
 <%@page import="javax.swing.JOptionPane"%>
 <%@page import="com.chtml.table.SymbolTable"%>
 <%@page import="com.chtml.table.Captcha"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <style>
+    div{
+        margin-left:auto;
+        margin-right: auto;
+        display:block;
+    }
+    
     .row:after {
     content: "";
     display: table;
     clear: both;
+    padding-left: 0px;
+    padding-right: 0px;
     }
     .column {
     float: left;
+    padding-left: 0px;
+    padding-right: 0px;
     }
+    
+    
     </style>
 <script>
     
@@ -125,7 +139,16 @@ function LETIMPAR_NUM(){
 </script>
 
 <%
-    Captcha captcha = new Captcha();
-    String code = captcha.writeCode();
-    out.write(code);
+    Holder holder = new Holder();
+    String id = request.getParameter("captchaId");
+    if(holder.isEmpty()==false){
+        HolderCaptcha captcha = holder.getCaptchaById(id);
+        if(captcha!=null){
+        Captcha auxiliar = new Captcha(id);
+        String asd = captcha.writeCode();    
+        request.getSession().setAttribute("captcha", id);
+        holder.writeAllData();
+        out.write(asd);
+        }
+    }
     %>

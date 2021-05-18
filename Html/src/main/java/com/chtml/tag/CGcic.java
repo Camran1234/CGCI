@@ -59,11 +59,17 @@ public class CGcic extends Tag{
                     ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar mas de una etiqueta C_Head","C_Head","Eliminar etiqueta", tags.get(index).line, tags.get(index).column));
                 }
                 head++;
+                if(this.checkTags(this, tags.get(index))){
+                    tags.get(index).execute();
+                }
             }else if(tags.get(index) instanceof CBody){
                 if(body>0){
                     ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar mas de una etiqueta C_Body","C_Body","Eliminar etiqueta", tags.get(index).line, tags.get(index).column));
                 }
                 body++;
+                if(this.checkTags(this, tags.get(index))){
+                    tags.get(index).execute();
+                }
             }else if(tags.get(index) instanceof CGcic){
                 ErrorHandler.semanticErrors.add(new SemanticError("No se puede colocar una etiqueta CGcic","CGcic","eliminar etiqueta",tags.get(index).line, tags.get(index).column));
             }else{

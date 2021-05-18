@@ -82,7 +82,12 @@ public class Variable extends Instruccion{
     public String writeCode(){
         StringBuffer string =  new StringBuffer();
         if(!type.isEmpty() && value!=null){
-            string.append("var "+name+" ");
+            if(this.mode.equalsIgnoreCase("")){
+                string.append("var "+name+" ");
+            }else{
+                string.append("var "+name+" ");
+            }
+            
             if(value.isEmpty()){
                 string.append(";\n");
             }else{

@@ -6,6 +6,7 @@
 package com.chtml.tag;
 
 import com.chtml.table.SymbolTable;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -149,7 +150,7 @@ public class Parameter{
                 string.append("font-family:"+value+"; ");
                 break;
             case "text-align":
-                string.append("text-align:"+value+" ");
+                string.append("text-align:"+value+"; ");
                 break;
             case "type":
                 string.append("type=\""+value+"\" ");
@@ -168,7 +169,7 @@ public class Parameter{
                 break;
                 
             case "class":
-                string.append("class=\""+value  +"\" ");
+                string.append("class=\""+value +"\" ");
                 break;
                 
             case "src":
@@ -198,7 +199,11 @@ public class Parameter{
                 if(this.value.contains("document.getElementById(")){
                     string.append(value);
                 }else{
-                    string.append("\""+value+"\"");
+                    String auxiliar = value.replace("\"", "\\\"");
+                    auxiliar = value.replace("\n","");
+                    auxiliar = value.replace("\r\n","");
+                    auxiliar = value.replace("\t\f","");
+                    string.append("\""+auxiliar+"\"");
                 }
                 break;
             case "char":

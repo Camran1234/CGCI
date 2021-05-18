@@ -15,8 +15,17 @@ public class Captcha {
     public static int intentos = 0;
     public static int fallos =0;
     public static int aciertos=0;
+    public static String actualId="";
     
     public Captcha(){
+    }
+    
+    public Captcha(String id){
+        this.actualId = id;
+    }
+    
+    public String getActualId(){
+        return actualId;
     }
     
     public void reset(){

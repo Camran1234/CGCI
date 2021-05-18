@@ -1,32 +1,29 @@
-    /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package Servlets;
 
-import com.chtml.error.ErrorHandler;
+import com.chtml.table.Captcha;
+import com.chtml.table.Holder;
+import com.chtml.table.HolderCaptcha;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.StringReader;
-import com.chtml.html.*;
-import com.chtml.table.Captcha;
-import com.chtml.table.Holder;
-import com.chtml.table.HolderCaptcha;
-import com.chtml.table.HtmlData;
-import com.chtml.table.SymbolTable;
 import javax.swing.JOptionPane;
+
 /**
  *
  * @author camran1234
  */
-@WebServlet("/Compilador")
-public class Compilador extends HttpServlet {
+@WebServlet("/Acierto")
+public class Acierto extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -40,41 +37,19 @@ public class Compilador extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        String code = request.getParameter("code");
-        HtmlData htmlData=null;
-        SymbolTable table = new SymbolTable();
-        try {
-        new ErrorHandler().resetHandler();
-        //get the code
-        StringReader reader = new StringReader(code);
-        ChtmlLex lexic = new ChtmlLex(reader);
-        HtmlParser parser = new HtmlParser(lexic);
-        new SymbolTable().clearTable();;
-        parser.parse();
-         htmlData = parser.getHtmlData();
-         
-         //Analizamos semanticamente
-         htmlData.execute();
-         Captcha captcha = new Captcha();
-         if(new ErrorHandler().isCompilable()){
-             if(!code.isEmpty()){
-                captcha.setData(htmlData);
-                request.getSession().setAttribute("Mensaje", "GENERADO");
-                HolderCaptcha holder = new HolderCaptcha(htmlData,captcha.getHref(),code );
-                //Agregamos el captcha generado a la lista
-                new Holder().addCaptcha(holder);
-             }
-         }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        String id = new Captcha().getActualId();
+        Holder holder=new Holder();
+        HolderCaptcha captcha = holder.getCaptchaById(id);
+        int aciertos = captcha.getAceirtos()+1;
+        int fallos = captcha.getFallos()-1;
+        captcha.setAceirtos(aciertos);
+        captcha.setFallos(fallos);
+        captcha.setLastDate(new Date());
+        String href = captcha.getHref();
+        //Actualizamos
+        holder.writeAllData();
+        response.sendRedirect(href);
         
-        String showDebug = request.getParameter("boton");
-        String previousPosition = request.getParameter("position");
-        request.getSession().setAttribute("newCode", code);
-        request.getSession().setAttribute("positionA",previousPosition);
-        request.getSession().setAttribute("tabla",showDebug);
-        response.sendRedirect("./index.jsp");
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

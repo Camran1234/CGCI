@@ -83,7 +83,7 @@ public class CTextArea extends Tag{
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</textare>");
+        string.append("</textarea>");
         return string.toString();
     }
     

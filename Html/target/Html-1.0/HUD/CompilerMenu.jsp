@@ -138,7 +138,7 @@ th {
               <a class="nav-link" href="./index.jsp" id='text'>Editor</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="./HUD/Page.jsp" id='text'>Captchas Creados</a>
+              <a class="nav-link" href="./HUD/ListadoCaptchas.jsp" id='text'>Captchas Creados</a>
             </li>
     <!-- <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">            Dropdown on Right</a>
@@ -164,7 +164,14 @@ th {
             %>  
             <h3 style=" color:green; font-family:Arial;">GENERADO</h3>
             <br>
-             <table style="width:100%"  class="table table-bordered table-dark">
+            <%
+                String tabla = (String)request.getSession().getAttribute("tabla");
+                request.getSession().removeAttribute("tabla");
+                if(tabla.equalsIgnoreCase("Debugear")){
+                SymbolTable symbolTable = new SymbolTable();
+                ArrayList<SymbolV> symbols = symbolTable.symbols;
+                %>
+            <table style="width:100%"  class="table table-bordered table-dark">
                  <h4 style="background-color:white;">TABLA DE SIMBOLOS</h4>
             <tr>
                 <th>POSICION</th>
@@ -176,9 +183,8 @@ th {
                 <th>No.Ejecucion</th>
             </tr>
             
-            <%
-                SymbolTable symbolTable = new SymbolTable();
-                ArrayList<SymbolV> symbols = symbolTable.symbols;
+            
+                <%
                 for(int index=0; index<symbols.size(); index++){
                     SymbolV aux = symbols.get(index);
                     %>
@@ -192,7 +198,7 @@ th {
                         <td><%=captcha.intentos%></td>
                     </tr>
                     <%
-                }
+                }}
                 %>
             
              </table>
@@ -225,7 +231,7 @@ th {
                               %>
                               <h4 style="padding-left:600px; background-color: white; opacity: 0.9; font-family: Arial; font-weight: bolder;
                                   " id="first" name="position" value="Line:0 Column:0"><b><%=previousPosition%></b></h4>
-                        <div class="row">
+                        <div class="row">   
                             <button class="btn btn-success btn-lg" value="Compilar" name="boton" id="compile">COMPILAR</button>
                             <button class="btn btn-danger btn-lg" value="Debugear" name="boton" id="compile">DEBUGEAR</button>  
                             </form>
@@ -419,7 +425,7 @@ th {
 </html>
 
 
-    </body>
+    
     
     <script>
         document.getElementById('output').addEventListener('keydown', function(e) {
@@ -472,4 +478,4 @@ document.getElementById('file-input')
     </script>
     
     
-</html>
+

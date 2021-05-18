@@ -21,8 +21,8 @@ public class Exit extends Instruccion{
     
     public String writeCode(){
         StringBuffer string = new StringBuffer();
-        String f = new Captcha().getHref();
-        string.append("location.replace(\""+f+"\");\n");
+        String servlet = "http://localhost:8080/Html/Acierto";
+        string.append("location.replace(\""+servlet+"\");\n");
         return string.toString();
     }
 }
