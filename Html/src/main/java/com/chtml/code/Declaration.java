@@ -6,6 +6,7 @@
 package com.chtml.code;
 
 import com.chtml.tag.Parameter;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -29,6 +30,20 @@ public class Declaration {
             return value.execute();
         }else{
             return null;
+        }
+    }
+    
+    public String writeCode(){
+        StringBuffer string = new StringBuffer();
+        string.append(value.writeCode());
+        return string.toString();
+    }
+    
+    public boolean isEmpty(){
+        if(this.value==null){
+            return true;
+        }else {
+            return false;
         }
     }
 }

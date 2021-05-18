@@ -15,8 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import com.chtml.html.*;
+import com.chtml.table.Captcha;
 import com.chtml.table.HtmlData;
 import com.chtml.table.SymbolTable;
+import javax.swing.JOptionPane;
 /**
  *
  * @author camran1234
@@ -48,13 +50,22 @@ public class Compilador extends HttpServlet {
         new SymbolTable().clearTable();;
         parser.parse();
          htmlData = parser.getHtmlData();
-         htmlData.execute();
          
+         //Analizamos semanticamente
+         htmlData.execute();
+         Captcha captcha = new Captcha();
+         if(new ErrorHandler().isCompilable()){
+             if(!code.isEmpty()){
+                captcha.setData(htmlData);
+                request.getSession().setAttribute("Mensaje", "GENERADO");
+             }
+         }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+        String previousPosition = request.getParameter("position");
         request.getSession().setAttribute("newCode", code);
+        request.getSession().setAttribute("positionA",previousPosition);
         response.sendRedirect("./index.jsp");
     }
 

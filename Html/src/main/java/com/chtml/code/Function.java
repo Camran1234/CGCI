@@ -44,7 +44,7 @@ public class Function {
         if(instrucciones!=null){
             this.instrucciones = instrucciones;
             for(int index=0; index<instrucciones.size(); index++){
-                instrucciones.get(index).setContext(this);
+                this.instrucciones.get(index).setContext(this);
             }
         }
     }
@@ -68,21 +68,33 @@ public class Function {
     
     public String writeCode(){
         StringBuffer string = new StringBuffer();
-        if(this.isOnLoad()){
+        if(this.isOnLoad){
+            string.append("var out;");
             for(int index=instrucciones.size()-1; index>=0; index--){
                 string.append(instrucciones.get(index).writeCode());
             }
+        }else{
+            string.append("function "+name+" (out) {\n");
+            //delete this
+            //string.append("<%int x=2; JOptionPane.showMessageDialog(null, x);%>\n");
+            for(int index=instrucciones.size()-1; index>=0; index--){
+                    string.append(instrucciones.get(index).writeCode());
+            }
+            string.append("\n}\n");
         }
+        new SymbolTable().eliminateContext(this);
         return string.toString();
     }
     
     public String writeProcess(){
         StringBuffer string = new StringBuffer();
+        string.append("function "+name+" () {\n");
         if(this.isOnLoad()==false){
             for(int index=instrucciones.size()-1; index>=0; index--){
                 string.append(instrucciones.get(index).writeCode());
             }
         }
+        string.append("\n}\n");
         return string.toString();
     }
     
@@ -90,7 +102,7 @@ public class Function {
     
     public void execute(){
         try {
-            
+            int asd=0;
                 for(int index=instrucciones.size()-1; index>=0; index--){
                     if(instrucciones.get(index) instanceof Exit || instrucciones.get(index) instanceof Redirect){
                         instrucciones.get(index).execute();    
@@ -98,8 +110,9 @@ public class Function {
                     }
                     instrucciones.get(index).execute();    
                 }
-                new SymbolTable().eliminateContext(this);
-            
+                if(!this.isOnLoad()){
+                    new SymbolTable().eliminateContext(this);
+                }
         } catch (Exception e) {
             e.printStackTrace();
         }

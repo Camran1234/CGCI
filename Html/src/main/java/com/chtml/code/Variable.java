@@ -82,12 +82,19 @@ public class Variable extends Instruccion{
     public String writeCode(){
         StringBuffer string =  new StringBuffer();
         if(!type.isEmpty() && value!=null){
-            string.append("var ");
-            string.append("");
+            string.append("var "+name+" ");
+            if(value.isEmpty()){
+                string.append(";\n");
+            }else{
+                string.append(" = ");
+                string.append(value.writeCode());
+                string.append(";\n");
+            }
         }else if(type.isEmpty() && value!=null){
-            
+            string.append(name+" ");
+            string.append(" = "+value.writeCode() + " ;\n");
         }
-        string.append(";");
+        this.execute();
         return string.toString();
     }
     
@@ -96,46 +103,48 @@ public class Variable extends Instruccion{
     public void execute(){
         SymbolTable symbol = new SymbolTable();
         if(!type.isEmpty() && value!=null){
-            //Declaracion
-            Parameter parametro = value.execute();
-            if(parametro!=null){
-                String tipo = parametro.getParameter();
-                String value = parametro.value();
-                int line = parametro.line;
-                int column = parametro.column;
+            if(value.isEmpty()){
                 boolean finalMode=false;
                 if(mode.isEmpty()==false){
                     finalMode=true;
                 }
-                
-                SymbolV symbolV = new SymbolV(name, type,line, column,parametro,context, finalMode);
-                
-                String typeVariable = this.type;
-                String typeValue = tipo;
-                Helper helper = new Helper();
-                if(helper.comprobacionIgualar(typeVariable, typeValue)){
-                    //agregamos el simbolo
-                    symbol.addSymbol(symbolV);
-                }else{
-                    ErrorHandler.semanticErrorsScript.add(new SemanticError("No se puede agregar "+typeValue+" a un "+typeVariable, typeValue,"Agregar un valor correcto",
-                    line, column));
+                SymbolV symbolV = new SymbolV (name, type, line, column, null, context, finalMode );
+                symbol.addSymbol(symbolV);
+            }else{
+                //Declaracion
+                Parameter parametro = value.execute();
+                if(parametro!=null){
+                    String tipo = parametro.getParameter();
+                    String value = parametro.value();
+                    int line = parametro.line;
+                    int column = parametro.column;
+                    boolean finalMode=false;
+                    if(mode.isEmpty()==false){
+                        finalMode=true;
+                    }
+
+                    SymbolV symbolV = new SymbolV(name, type,line, column,parametro,context, finalMode);
+
+                    String typeVariable = this.type;
+                    String typeValue = tipo;
+                    Helper helper = new Helper();
+                    if(helper.comprobacionIgualar(typeVariable, typeValue)){
+                        //agregamos el simbolo
+                        symbol.addSymbol(symbolV);
+                    }else{
+                        ErrorHandler.semanticErrorsScript.add(new SemanticError("No se puede agregar "+typeValue+" a un "+typeVariable, typeValue,"Agregar un valor correcto",
+                        line, column));
+                    }
                 }
-            }
-            
+            } 
         }else if(type.isEmpty() && value!=null){
-            //Actualizacion
-            Parameter parametro = value.execute();
-            int line = parametro.line;
-            int column = parametro.column;
-            symbol.updateVariable(name, parametro, line, column);
-            //actualizamos valores
-        }else if(!type.isEmpty() && value==null){
-            boolean finalMode=false;
-                if(mode.isEmpty()==false){
-                    finalMode=true;
-                }
-            SymbolV symbolV = new SymbolV (name, type, line, column, null, context, finalMode );
-            symbol.addSymbol(symbolV);
+            
+                //Actualizacion
+                Parameter parametro = value.execute();
+                int line = parametro.line;
+                int column = parametro.column;
+                symbol.updateVariable(name, parametro, line, column);
+                //actualizamos valores
         }
     }
     

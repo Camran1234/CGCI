@@ -4,9 +4,12 @@
     Author     : camran1234
 --%>
 
+<%@page import="javax.swing.JOptionPane"%>
+<%@page import="com.chtml.table.SymbolTable"%>
+<%@page import="com.chtml.table.Captcha"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<script>
+<style>
     .row:after {
     content: "";
     display: table;
@@ -15,7 +18,29 @@
     .column {
     float: left;
     }
+    </style>
+<script>
     
+    
+    
+function RandInt(){
+    const random = (min, max) => Math.floor(Math.random() * (max - min)) + min;
+    return random(0,10);
+}    
+    
+function RandChar(){
+    const random = (min, max) => Math.floor(Math.random() * (max - min)) + min;
+    	var z = "";
+        var mayus = random(0,2);
+        if(mayus == 0){
+        	mayus = random(97,123);
+        }else if(mayus == 1){
+        	mayus = random(65,91);
+        }
+        z = String.fromCharCode(mayus);
+        return z;
+}
+
 function ASC(a){
     	var word = a;
         var array = a.split('');
@@ -98,3 +123,9 @@ function LETIMPAR_NUM(){
 
 
 </script>
+
+<%
+    Captcha captcha = new Captcha();
+    String code = captcha.writeCode();
+    out.write(code);
+    %>

@@ -18,10 +18,10 @@ public class COption extends Tag{
     @Override
     public String writeCode(){
         StringBuffer string = new StringBuffer();
-        string.append("<option ");
+        string.append("\n<option ");
         string.append("value=\""+text.value()+"\" ");
-        string.append(">\n");
-        string.append(this.getStringTags());
+        string.append(">");
+        string.append(text.value());
         string.append("</option>\n");
         return string.toString();
     }

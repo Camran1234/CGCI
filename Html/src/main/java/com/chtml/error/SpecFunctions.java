@@ -49,10 +49,10 @@ public class SpecFunctions {
                 string.append(" Reverse("+value.writeCode()+") ");
                 break;
             case "RandChar":
-                string.append(" RandChar("+value.writeCode()+") ");
+                string.append(" RandChar() ");
                 break;
             case "RandInt":
-                string.append(" RandInt("+value.writeCode()+") ");
+                string.append(" RandInt() ");
                 break;
         }
         

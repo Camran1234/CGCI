@@ -38,7 +38,7 @@ public class ErrorHandler {
     
     public boolean isCompilable(){
         boolean result=false;
-        if(semanticErrors.size()!=0 || lexicalErrorsScript.size()!=0 || syntaxErrorsScript.size()!=0 || semanticErrorsScript.size()!=0){
+        if(semanticErrors.size()==0 && lexicalErrorsScript.size()==0 && syntaxErrorsScript.size()==0 && semanticErrorsScript.size()==0){
             result=true;
         }
         return result;

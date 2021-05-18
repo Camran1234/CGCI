@@ -69,13 +69,13 @@ public class CP extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<p ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(this.checkTags(this,tags.get(index))){
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</p>\n");
+        string.append("</p>");
         return string.toString();
     }
     

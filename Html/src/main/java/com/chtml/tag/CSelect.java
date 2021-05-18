@@ -68,13 +68,13 @@ public class CSelect extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<select ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(this.checkTags(this,tags.get(index))){
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</select>\n");
+        string.append("</select>");
         return string.toString();
     }
     

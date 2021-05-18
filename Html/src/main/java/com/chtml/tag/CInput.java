@@ -20,7 +20,7 @@ public class CInput extends Tag{
     
     public void setType(String type, String line, String column){
         if(!type.isEmpty()){
-            this.type.setParameter(type);
+            this.type.setValue(type);
             this.type.setPosition(line, column);
         }else{
             ErrorHandler.semanticErrors.add(new SemanticError("el parametro esta vacio"," el parametro type","text, number, radio o checkbox era esperado",Integer.parseInt(line), Integer.parseInt(column)));
@@ -77,13 +77,13 @@ public class CInput extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<input ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(this.checkTags(this, tags.get(index))){
                             string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</input>\n");
+        string.append("</input>");
         return string.toString();
     }
     

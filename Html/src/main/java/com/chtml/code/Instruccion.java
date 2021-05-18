@@ -13,7 +13,7 @@ public class Instruccion {
     Object context;
     public int line, column;
     
-    public void setContext(Object Context){
+    public void setContext(Object context){
         this.context = context;
     }
     
@@ -26,4 +26,8 @@ public class Instruccion {
         //throw nothing
         System.out.println("Something");
     }   
+    
+    public Object getContext(){
+        return context;
+    }
 }

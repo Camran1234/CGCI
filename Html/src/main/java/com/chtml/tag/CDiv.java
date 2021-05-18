@@ -96,13 +96,13 @@ public class CDiv extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<div ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(this.checkTags(this, tags.get(index))){
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</div>\n");
+        string.append("</div>");
         return string.toString();
     }
 }

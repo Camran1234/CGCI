@@ -16,6 +16,7 @@ public class MultipleVariable extends Instruccion{
     
     public MultipleVariable(ArrayList<Variable> variables){
         this.variables = variables;
+        
     }
     
     public ArrayList<Variable> getVariables(){
@@ -25,7 +26,19 @@ public class MultipleVariable extends Instruccion{
     @Override
     public void execute(){
         for(int index=0; index<variables.size(); index++){
+            variables.get(index).setContext(this.context);
+        }
+        for(int index=0; index<variables.size(); index++){
             variables.get(index).execute();
         }
+    }
+    
+    @Override
+    public String writeCode(){
+        StringBuffer string = new StringBuffer();
+        for(int index=0; index<variables.size(); index++){
+            string.append(variables.get(index).writeCode());
+        }
+        return string.toString();
     }
 }

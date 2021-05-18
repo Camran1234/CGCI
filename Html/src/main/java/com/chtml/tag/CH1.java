@@ -72,13 +72,13 @@ public class CH1 extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<h1 ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(this.checkTags(this, tags.get(index))){
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</h1> \n");
+        string.append("</h1>");
         return string.toString();
     }
     

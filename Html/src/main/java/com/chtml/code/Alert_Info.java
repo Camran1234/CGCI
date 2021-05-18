@@ -25,14 +25,16 @@ public class Alert_Info extends Instruccion{
     @Override
     public void execute(){
         Parameter parameter = operation.execute();
+        //JOptionPane.showMessageDialog(null,parameter.value());
         //nothing just execute
     }
     public String writeCode(){
         Parameter parameter = operation.execute();
         StringBuffer string = new StringBuffer();
         string.append("alert(");
-        string.append(parameter.value());
+        string.append(parameter.writeCode());
         string.append(");\n");
+        //JOptionPane.showMessageDialog(null ,string.toString());
         return string.toString();
     }
     

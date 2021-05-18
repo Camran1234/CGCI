@@ -18,7 +18,7 @@ public class CBr extends Tag{
     
     @Override
     public String writeCode(){
-        return "<br>\n";
+        return "<br>";
     }
     
     @Override

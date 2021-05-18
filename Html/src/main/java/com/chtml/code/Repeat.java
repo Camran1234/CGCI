@@ -7,6 +7,7 @@ package com.chtml.code;
 
 import com.chtml.error.ErrorHandler;
 import com.chtml.error.SemanticError;
+import com.chtml.table.SymbolTable;
 import com.chtml.tag.Parameter;
 import java.util.ArrayList;
 
@@ -22,8 +23,13 @@ public class Repeat extends Instruccion{
     
     public Repeat(Variable variable, Huntil huntil, int line, int column){
         this.variable = variable;
+        if(variable!=null){
+            this.variable.setContext(this);
+        }
         this.huntil = huntil;
-        huntil.setContext(this);
+        if(huntil!=null){
+            this.huntil.setContext(this);
+        }
         this.line = line;
         this.column = column;
     }
@@ -34,13 +40,16 @@ public class Repeat extends Instruccion{
         try {
             if(variable!=null){
                 variable.execute();
-                if(variable.getType().equalsIgnoreCase("int")){
+                SymbolTable table = new SymbolTable();
+                Parameter parametroA = new Parameter("variable",variable.getName(),line,column);
+                if(variable.getType().equalsIgnoreCase("int") || parametroA.getParameter().equalsIgnoreCase("int")){
                     Declaration declaration = variable.getValue();
                     if(declaration!=null){
                         Parameter parametro = declaration.execute();
                         int valor = Integer.parseInt(parametro.value());
-                        huntil.execute(valor);
+                        huntil.execute(valor, variable.getName());
                     }
+                    new SymbolTable().eliminateContext(this);
                 }else{
                     ErrorHandler.semanticErrorsScript.add(new SemanticError("Variable de tipo "+variable.getType()+"no aceptada en el repeat",variable.getName(),"Declarar como int en lugar de "+variable.getType(),line, column));
                 }
@@ -55,7 +64,7 @@ public class Repeat extends Instruccion{
         StringBuffer string = new StringBuffer();
         string.append("for ( ");
         string.append(variable.writeCode());
-        string.append(huntil.writeCode());
+        string.append(huntil.writeCode(variable.getName()));
         return string.toString();
     }
     

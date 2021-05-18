@@ -15,7 +15,5 @@ public class Redirect extends Instruccion{
     public Redirect(int line, int column){
         this.line = line;
         this.column = column;
-    }
-    
-    
+    } 
 }

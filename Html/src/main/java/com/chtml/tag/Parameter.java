@@ -77,6 +77,10 @@ public class Parameter{
         this.column = Integer.parseInt(column);
     }
     
+    public String getRawParameter(){
+        return this.parameter;
+    }
+    
     /**
      * Parametro es el tipo
      * @return 
@@ -113,6 +117,7 @@ public class Parameter{
     
     public void setParameter(String newParameter){
         this.parameter = newParameter;
+        
     }
     
     public boolean isStarted(){
@@ -179,7 +184,7 @@ public class Parameter{
                 string.append("alt=\""+value+"\" ");
                 break;
             case "onclick":
-                string.append("onclick=\""+value+"\"(this) ");
+                string.append("onclick=\""+value.replace("()","(this)")+"\" ");
                 break;
             case "text":
                 //Los unicos que tienen esta etiqueta son la etiqueta script
@@ -190,7 +195,11 @@ public class Parameter{
                 string.append(value);
                 break;
             case "string":
-                string.append("\""+value+"\"");
+                if(this.value.contains("document.getElementById(")){
+                    string.append(value);
+                }else{
+                    string.append("\""+value+"\"");
+                }
                 break;
             case "char":
                 string.append("\'"+value+"\'");

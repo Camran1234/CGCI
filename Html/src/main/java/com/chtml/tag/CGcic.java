@@ -39,11 +39,11 @@ public class CGcic extends Tag{
     @Override
     public String writeCode(){
         StringBuffer string = new StringBuffer();
-        string.append("<html>\n");
+        string.append("<html>");
         for(int index=0; index<tags.size(); index++){
             string.append(tags.get(index).writeCode());
         }
-        string.append("</html>\n");
+        string.append("</html>");
         return string.toString();
     }
     

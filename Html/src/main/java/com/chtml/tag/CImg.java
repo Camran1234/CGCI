@@ -69,7 +69,7 @@ public class CImg extends Tag {
         StringBuffer string = new StringBuffer();
         string.append("<img ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         return string.toString();
     }
     

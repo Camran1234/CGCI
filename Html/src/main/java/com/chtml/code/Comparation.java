@@ -8,6 +8,8 @@ package com.chtml.code;
 import Operadores.*;
 import com.chtml.error.ErrorHandler;
 import com.chtml.error.SemanticError;
+import com.chtml.tag.Parameter;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -79,9 +81,15 @@ public class Comparation {
         if(left !=null && right!=null){
             switch(comparador){
                 case "==":
-                    string.append(left.writeCode()+" ");
-                    string.append("== ");
-                    string.append(right.writeCode()+" ");
+                    Parameter leftP = left.execute();
+                    Parameter rightP = right.execute();
+                    if(leftP.getParameter().equalsIgnoreCase("string") && rightP.getParameter().equalsIgnoreCase("string")){
+                        string.append(left.writeCode() + ".localeCompare("+right.writeCode()+") == 0");
+                    }else{
+                        string.append(left.writeCode()+" ");
+                        string.append("== ");
+                        string.append(right.writeCode()+" ");
+                    }
                     break;
                 case "!=":
                     string.append(left.writeCode()+" ");

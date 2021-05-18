@@ -28,13 +28,11 @@ public class CScripting extends Tag{
     @Override 
     public String writeCode(){
         StringBuffer string = new StringBuffer();
-        string.append("<script>\n");
-        for(int index=0; index<funciones.size(); index++){
-            if(funciones.get(index).isOnLoad()){
+        string.append("<script>");
+        for(int index=funciones.size()-1; index>=0; index--){
                 string.append(funciones.get(index).writeCode());
-            }
         }
-        string.append("</script>\n");
+        string.append("</script>");
         return string.toString();
     }
     
@@ -77,10 +75,8 @@ public class CScripting extends Tag{
                 }
                 
                 //ejecutamos las funciones si estan
-                for(int index=0; index<funciones.size(); index++){ 
-                    if(funciones.get(index).isOnLoad()==true){
+                for(int index=funciones.size()-1; index>=0; index--){ 
                         funciones.get(index).execute();
-                    }
                 }
             }
         } catch (Exception e) {

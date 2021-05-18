@@ -52,13 +52,18 @@ public class Tag {
     public String getStringTags(){
         StringBuffer string = new StringBuffer();
         string.append(href.writeCode());
-        string.append("style=\" ");
-        string.append(background.writeCode());
-        string.append(color.writeCode());
-        string.append(fontsize.writeCode());
-        string.append(fontfamily.writeCode());
-        string.append(textAlign.writeCode());
-        string.append(" \" ");
+        String texto = "";
+        texto += background.writeCode();
+        texto += color.writeCode();
+        texto += (fontsize.writeCode());
+        texto += (fontfamily.writeCode());
+        texto += (textAlign.writeCode());
+        if(!texto.isEmpty()){
+            string.append("style=\" ");
+            string.append(texto);
+            string.append(" \" ");
+        }
+        
         string.append(type.writeCode());
         string.append(id.writeCode());
         string.append(name.writeCode());

@@ -74,7 +74,7 @@ public class CSpam extends Tag{
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</span>\n");
+        string.append("</span>");
         return string.toString();
     }
     

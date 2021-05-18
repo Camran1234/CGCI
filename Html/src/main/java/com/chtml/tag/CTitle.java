@@ -25,7 +25,7 @@ public class CTitle extends Tag {
                 string.append(tags.get(index).writeCode());
             }
         }
-        string.append("</title>\n");
+        string.append("</title>");
         return string.toString();
     }
     

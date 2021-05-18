@@ -87,13 +87,13 @@ public class CButton extends Tag{
         StringBuffer string = new StringBuffer();
         string.append("<button ");
         string.append(this.getStringTags());
-        string.append(">\n");
+        string.append(">");
         for(int index=0; index<tags.size(); index++){
             if(checkTags(this, tags.get(index))){
                 string.append(tags.get(index).writeCode());
             }
         }
-        string .append("</button>\n");
+        string .append("</button>");
         return string.toString();
     }
     

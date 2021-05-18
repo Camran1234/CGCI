@@ -8,6 +8,7 @@ package com.chtml.tag;
 import com.chtml.error.ErrorHandler;
 import com.chtml.error.SemanticError;
 import com.chtml.table.Captcha;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -21,8 +22,10 @@ public class CLink extends Tag{
     
     public void setHref(String href, String line, String column){
         if(!href.isEmpty()){
-            this.href.setParameter(href);
+            this.href.setValue(href);
             this.href.setPosition(line, column);
+            Captcha captcha = new Captcha();
+            captcha.setnewLink(this.href.value());
         }else{
             ErrorHandler.semanticErrors.add(new SemanticError("el parametro esta vacio"," el parametro href","Agregar una URL",Integer.parseInt(line), Integer.parseInt(column)));
         }
@@ -32,12 +35,8 @@ public class CLink extends Tag{
     public String writeCode(){
         StringBuffer string = new StringBuffer();
         //Agregamos el link del captcha
-        String link="www.google.com";
-        if(href.isStarted()){
-            link = href.value();
-        }
        Captcha captcha = new Captcha();
-        captcha.setnewLink(link);
+        captcha.setnewLink(captcha.getHref());
         return string.toString();
     }
     

@@ -5,6 +5,7 @@
  */
 package com.chtml.code;
 
+import com.chtml.table.SymbolTable;
 import com.chtml.tag.Parameter;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,7 @@ public class While extends Instruccion{
                 }else{
                     break;
                 }
+                new SymbolTable().eliminateContext(this);
             }
         }
         

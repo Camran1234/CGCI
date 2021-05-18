@@ -34,6 +34,18 @@ public class SymbolTable {
         this.captchaId = "";
     }
     
+    public void clearVariable(){
+        this.symbols = new ArrayList();
+    }
+    
+    public String writeFunctions(){
+        StringBuffer string = new StringBuffer();
+        for(int index=0; index<funciones.size(); index++){
+            string.append(funciones.get(index).writeProcess());
+        }
+        
+        return string.toString();
+    }
     
     
     public void addTag(Tag tag){
@@ -110,12 +122,15 @@ public class SymbolTable {
         }
         
         
-        for(int index=symbols.size()-1; index>=0; index++){
+        for(int index=symbols.size()-1; index>=0; index--){
             //Comparamos
             //Las globales una vez declaradas no las podemos eliminar
-            if(symbols.get(index).getContext().equals(context) && symbols.get(index).isGlobal()==false){
-                //Removemos
-                symbols.remove(index);
+            
+            if(symbols.get(index).getContext()!=null){
+                if(symbols.get(index).getContext().equals(context) && symbols.get(index).isGlobal()==false){
+                    //Removemos
+                    symbols.remove(index);
+                }
             }
         }
     }
@@ -139,6 +154,8 @@ public class SymbolTable {
                 if(helper.comprobacionIgualar(typeS, typeP)){
                     //actualizamos el valor
                     theSymbol.setValue(parameter);
+                    theSymbol.setLine(line);
+                    theSymbol.setColumn(column);
                 }else{
                     //agregamos error si no son del mismo tipo
                     ErrorHandler.semanticErrorsScript.add(new SemanticError(typeS+" no puede asignar "+typeP,typeP,"Agregar un valor adecuado",line,column));
@@ -214,21 +231,32 @@ public class SymbolTable {
             }
         }
         if(!founded){
+            
             symbols.add(symbol);
         }else{
             String message="";
             if(symbol.getContext() instanceof Tag){
                 message = "Id de la etiqueta ya existe en el contexto";
                 ErrorHandler.semanticErrors.add(new SemanticError(message,symbol.getNameId(),"Cambiar el nombre",symbol.getLine(), symbol.getColumn()));
-            }else if(symbol.getContext() instanceof Variable){
+            }else if(symbol.getType().equalsIgnoreCase("int")||symbol.getType().equalsIgnoreCase("char")||
+                        symbol.getType().equalsIgnoreCase("string") || symbol.getType().equalsIgnoreCase("decimal")
+                    || symbol.getType().equalsIgnoreCase("boolean") || symbol.getType().equalsIgnoreCase("variable")){
                 message = "La variable ya existe en el contexto actual";
                 ErrorHandler.semanticErrorsScript.add(new SemanticError(message,symbol.getNameId(),"Cambiar el nombre",symbol.getLine(), symbol.getColumn()));
             }else if(symbol.getContext() instanceof Function){
                 message = "La funcion etiqueta ya existe en el contexto";
                 ErrorHandler.semanticErrorsScript.add(new SemanticError(message,symbol.getNameId(),"Cambiar el nombre",symbol.getLine(), symbol.getColumn()));
             }
-            
         }       
+    }
+
+    public void refreshVariable(String name) {
+        for(int index=0; index<symbols.size(); index++){
+            if(symbols.get(index).getNameId().equalsIgnoreCase(name)){
+                symbols.get(index).updateOne();
+                break;
+            }
+        }
     }
     
 
