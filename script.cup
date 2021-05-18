@@ -1,0 +1,580 @@
+package com.script.parser;
+import java_cup.runtime.Symbol;
+import com.chtml.error.*;
+
+parser code {:
+public static int errors = 0;
+int lineError=0; 
+int columnError=0;
+String tokenError = "";
+String expectedTokens = "";
+
+CScripting script;
+Object context;
+int line =0;
+int column=0;
+boolean igualacion=false;
+
+public void setLine(int newLine){
+        this.line =newLine;
+}
+
+public void setColumn(int newColumn){
+        this.column =newColumn;
+}
+
+//Context for script 
+public void setScript(CSripting script){
+        this.script=script;
+}
+
+public void report_error(String message, Object info) { 
+    if (info instanceof String){
+	Symbol s = cur_token;
+	errors++;       
+        if(message.equalsIgnoreCase(".")){
+                message = "Se esperaba alguna forma como "+expectedTokens;
+        }
+        System.err.println("  "+ errors + "==> " + info + " en "+tokenError+": "+ message + " [linea: "+lineError+" columna: "+columnError+"]");
+        ErrorHandler.syntaxErrorsScript(new SyntaxError(message, tokenError,info, lineError+line, columnError+column;));
+    }
+    else {
+    	StringBuffer m = new StringBuffer("Error ");
+    	if (info instanceof java_cup.runtime.Symbol) 
+     	   m.append( "("+info.toString()+")" );     
+    	m.append(" : "+message);   
+    	System.err.println(m);
+    }
+}
+
+public void report_error_final(String message, Object info){
+    if (info instanceof String){
+	Symbol s = cur_token;
+	errors++;       
+        
+        if(message.equalsIgnoreCase(".")){
+                message = "Se esperaba alguna forma como "+expectedTokens;
+        }
+        System.err.println("  "+ errors + "==> " + info + ": "+ message);
+        ErrorHandler.syntaxErrorsScript(new SyntaxError(message, tokenError,info, lineError+line, columnError+column;));
+    }
+    else {
+    	StringBuffer m = new StringBuffer("Error ");
+    	if (info instanceof java_cup.runtime.Symbol) 
+     	   m.append( "("+info.toString()+")" );     
+    	m.append(" : "+message);   
+    	System.err.println(m);
+    }
+}
+
+@Override
+	public void syntax_error(Symbol symbol){
+	    int line = symbol.left;
+	    int column = symbol.right;
+	    String token = (String) cur_token.value;
+	    //We get the production
+            tokenError = token;
+            lineError = line;
+            columnError = column;
+            expectedTokens = "";
+            for(int index=0; index<expected_token_ids().size() ; index++){
+                //We traduce the token to a form that the user might understand
+                expectedTokens += symbl_name_from_id(expected_token_ids().get(index));
+				expectedTokens += ", ";
+            }
+	}
+
+@Override
+	public void unrecovered_syntax_error(Symbol symbol){
+                report_error_final("Estado Ilegal de Expresion", "Error Sintactico");
+	}
+        
+:}
+
+terminal INIT, END, IF, THEN, ELSE, REPEAT, HUNTIL, INSERT, WHILE, THENWHILE,  TRUE, FALSE, STRING, PROCESS,
+OR, AND, NOT, EQUALIZATION, DIFFERENTIATION, LESSTHAN, GREATERTHAN, LESS, GREATER, SUMA, RESTA, DIV, MULT,
+ASC, DESC, LETPAR_NUM, LETIMPAR_NUM, REVERSE, CARACTER_ALEATORIO, NUM_ALEATORIO, ALERT_INFO, EXIT, INTEGER, DECIMAL, 
+BOOLEAN, CHAR, STRINGVAR,  EQUAL, COLON, SEMICOLON, COMA, OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET,
+CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS, NUMBER, SYMCHAR, GETELEMENT, IDPARAMETER, IDVARIABLE,INVALIDATE, ONLOAD, GLOBAL;
+
+non terminal function, sfunction, s, codigo, linecode, op, variable, variable_re, declarations, declaration, assignations, expression,
+if, elseif, block_elseif, else,block_else, comparation, condition, moreassignations,condition_re, instruccion, repeat, huntil, while, specfunction,
+ variablea,specactions, linecodeif, instruccionif, codigofunction, block_if, type;
+
+/*precedences*/
+precedence left SUMA, RESTA;
+precedence left DIV, MULT;
+precedence left EQUALIZATION, DIFFERENTIATION, LESS, LESSTHAN, GREATER, GREATERTHAN;
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+precedence left OPEN_PARENTHESIS, CLOSE_PARENTHESIS;
+precedence left ELSE;
+
+start with s;
+
+//Function Start
+function ::= ONLOAD:process OPEN_PARENTHESIS CLOSE_PARENTHESIS {:SymbolV symbol = new SymbolV(String.valueOf(process),"onload",cur_token.left+line,cur_token.right+column,script);
+                                                                context=symbol;
+                                                                symbolTable.add(symbol);
+                                                                 RESULT=symbol;:}
+        |PROCESS:process OPEN_PARENTHESIS CLOSE_PARENTHESIS {:SymbolV symbol = new SymbolV(String.valueOf(process),"function",cur_token.left+line,cur_token.right+column,new SymbolTable());
+                                                                context = symbol;
+                                                                symbolTable.add(symbol);       
+                                                                RESULT=process;:}
+        |error OPEN_PARENTHESIS CLOSE_PARENTHESIS {:System.err.println("Error: e1");parser.report_error("Se esperaba PROCESS_... o ONLOAD" , "Error Sintactico");:}
+        |ONLOAD error CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+        |ONLOAD OPEN_PARENTHESIS error  {:parser.report_error("Se esperaba )" , "Error Sintactico");:}
+        |PROCESS error CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+        |PROCESS OPEN_PARENTHESIS error  {:parser.report_error("Se esperaba )" , "Error Sintactico");:}; 
+
+sfunction ::= function:f OPEN_BRACKET codigofunction
+                |function error codigofunction {:parser.report_error("Se esperaba [" , "Error Sintactico");:}
+            ;
+
+s ::= sfunction s
+    |/*Empty*/;
+
+//codigo
+
+codigofunction ::= declarations codigofunction
+                |if codigofunction
+                |repeat codigofunction
+                |while codigofunction
+                |specactions codigofunction
+                |error codigofunction {:parser.report_error("Se esperaba una declaracion, accion especial, condicion, ciclo o ]" , "Error Sintactico");:}
+                |CLOSE_BRACKET
+                ;
+
+linecode ::= declarations
+                |repeat
+                |if
+                |while
+                |specactions
+                |error {:parser.report_error("Se esperaba una declaracion, accion especial, condicion o un ciclo " , "Error Sintactico");:};
+
+linecodeif ::= declarations
+                |repeat
+                |while
+                |specactions
+                |error {:parser.report_error("Se esperaba una declaracion, accion especial, ciclo o ]" , "Error Sintactico");:};
+
+codigo ::= declarations codigo 
+                |if codigo
+                |repeat codigo 
+                |while codigo
+                |specactions codigo
+                |error codigo{:parser.report_error("Se esperaba una declaracion, accion especial, condicion, ciclo o ]" , "Error Sintactico");:}
+                |SEMICOLON;
+
+
+
+
+//OPERACION
+
+op ::= op:left SUMA op:right {: 
+        if(left!=null && right!=null){
+                Helper helper = new Helper();
+                Parameter parameterLeft = (Parameter)left;
+                Parameter parameterRight = (Parameter)right;
+                String leftType = parameterLeft.getParameter();
+                String rightType = parameterRight.getParameter();
+                if(helper.resultadosSuma(leftType, rightType,cur_token.left+line, cur_token.right+column)){
+                        Parameter resultado = new Parameter(helper.tipoSuma(leftType, rightType),
+                        new SpecFunctions().generarSuma(leftType, rightType, parameterLeft.value, parameterRight.value),
+                        cur_token.left + line,
+                        cur_token.right+column);
+                }
+        }
+         :}
+        |op:left RESTA op:right{: 
+       if(left!=null && right!=null){
+                Helper helper = new Helper();
+                Parameter parameterLeft = (Parameter)left;
+                Parameter parameterRight = (Parameter)right;
+                String leftType = parameterLeft.getParameter();
+                String rightType = parameterRight.getParameter();
+                if(helper.resultadosResta(leftType, rightType,cur_token.left+line, cur_token.right+column)){
+                        Parameter resultado = new Parameter(helper.tipoResta(leftType, rightType),
+                        new SpecFunctions().generarResta(leftType, rightType, parameterLeft.value, parameterRight.value),
+                        cur_token.left + line,
+                        cur_token.right+column);
+                }
+        }
+         :}
+        |op:left DIV op:right{: 
+       if(left!=null && right!=null){
+                Helper helper = new Helper();
+                Parameter parameterLeft = (Parameter)left;
+                Parameter parameterRight = (Parameter)right;
+                String leftType = parameterLeft.getParameter();
+                String rightType = parameterRight.getParameter();
+                if(helper.resultadosDivision(leftType, rightType,cur_token.left+line, cur_token.right+column)){
+                        Parameter resultado = new Parameter(helper.tipoResta(leftType, rightType),
+                        new SpecFunctions().generarDivision(leftType, rightType, parameterLeft.value, parameterRight.value),
+                        cur_token.left + line,
+                        cur_token.right+column);
+                }
+        }
+         :}
+        |op:left MULT op:right{: 
+        if(left!=null && right!=null){
+                Helper helper = new Helper();
+                Parameter parameterLeft = (Parameter)left;
+                Parameter parameterRight = (Parameter)right;
+                String leftType = parameterLeft.getParameter();
+                String rightType = parameterRight.getParameter();
+                if(helper.resultadosMultiplicacion(leftType, rightType,cur_token.left+line, cur_token.right+column)){
+                        Parameter resultado = new Parameter(helper.tipoResta(leftType, rightType),
+                        new SpecFunctions().generarMultiplicacion(leftType, rightType, parameterLeft.value, parameterRight.value),
+                        cur_token.left + line,
+                        cur_token.right+column);
+                }
+        }
+         :}
+        |OPEN_PARENTHESIS op:val CLOSE_PARENTHESIS {:RESULT=val;:}
+        |NUMBER:e {:Parameter parameter = new Parameter("int",String.valueOf(e),cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:}
+        |DECIMAL:e {:Parameter parameter = new Parameter("decimal",String.valueOf(e),cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:}
+        |RESTA NUMBER:e {:Parameter parameter = new Parameter("int",String.valueOf(-e),cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:}
+        |RESTA DECIMAL:e {:Parameter parameter = new Parameter("decimal",String.valueOf(-e),cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:}
+        |STRING:e {: String text = String.valueOf(e);
+                text = text.substring(1, text.length() - 1);
+                Parameter parameter = new Parameter("string",text,cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:} //Viene de la forma "Textp"
+        |SYMCHAR:e {: String text = String.valueOf(e);
+                text = text.substring(1, text.length() - 1);
+                Parameter parameter = new Parameter("char",text,cur_token.left+line, cur_token.right+column);
+                RESULT=parameter;:} //Viene de la forma "char"
+        |TRUE:res {:Parameter parameter = new Parameter("boolean",String.valueOf(res),cur_token.left+line, cur_token.right+column);RESULT=parameter;:} //Viene de la forma true
+        |FALSE:res {:{:Parameter parameter = new Parameter("boolean",String.valueOf(res),cur_token.left+line, cur_token.right+column);RESULT=parameter;:}:} //Viene de la forma false
+        |IDVARIABLE:name {: 
+                        Object value = symbolTable.getValueVariable(String.valueOf(name),context);
+                        if(value !=null){
+                                if(value instanceof Parameter){
+                                        Parameter parametro = (Parameter)value;
+                                        //Return the content of the value
+                                        RESULT = parametro.value;
+                                }else{
+                                        //Add new Error in case of something
+                                        ErrorHandler.semanticErrorsScript.add(new SemanticError("Valor de la variable undefined",String.valueOf(name),"Corroborar su declaracion y asignacion de valores",cur_token.left+line, cur_token.right+column));
+                                }
+                        }
+                        :}
+        |specfunction:func {:RESULT=func;:}
+        |error {:parser.report_error("." , "Error Sintactico"); RESULT = new Parameter("null");:};
+
+//Asignacion de VARIABLES
+
+//Retorna las Variables y les agrega el modo
+variable ::= GLOBAL:mode variablea:re {:
+                                        if(re != null){
+                                                if(re instanceof ArrayList){
+                                                        ArrayList<Variable> variables = (ArrayList<Variable>)re;
+                                                        for(int index=0; index<variables.size(); index++){
+                                                                variables.get(index).setMode(String.valueOf(mode));
+                                                        }
+                                                        RESULT = variables;
+                                                }
+                                                RESULT :re;
+                                        }
+                                  :}
+        |variablea:re {: RESULT = re; :};
+
+//Retorna las variables
+variablea ::= IDVARIABLE:name variable_re:array {:
+                                                if(array!=null){
+                                                        if(array instanceof ArrayList){
+                                                                ArrayList<Variable> variables = (ArrayList<Variable>)array;
+                                                                Variable variable = new Variable();
+                                                                variable.setPosition(cur_token.left, cur_token.right);
+                                                                variable.setName(String.valueOf(name));
+                                                                variables.add(variable);
+                                                                RESULT = variables;
+                                                        }
+                                                }
+                                                
+                                                
+                                                :};
+//Genera una nueva variable
+variable_re ::= COMA IDVARIABLE:name variable_re:array {:
+                                                if(array!=null){
+                                                        if(array instanceof ArrayList){
+                                                                ArrayList<Variable> variables = (ArrayList<Variable>)array;
+                                                                Variable variable = new Variable();
+                                                                variable.setPosition(cur_token.left, cur_token.right);
+                                                                variable.setName(String.valueOf(name));
+                                                                variables.add(variable);
+                                                                RESULT = variables;
+                                                        }
+                                                }
+                                                :}
+                |EQUAL {: igualacion=true;ArrayList<Variable> variables = new ArrayList(); RESULT = variables; :}//Prepare assignations
+                |/*empty*/ {: igualacion=false;ArrayList<Variable> variables = new ArrayList(); RESULT = variables;:};
+
+
+//declarations y asignaciones
+//Retorna variables con todos los valores
+//variable viene con nombre, posicion y modo
+declarations ::= type:tipo variable:multiple declaration:valor {:
+                                                                //assignation in the symbol table
+                                                                String tipoDeclarado = String.valueOf(tipo);
+                                                                if(multiple != null){
+                                                                        if(declaration!=null){
+                                                                                ArrayList<Variable> variables = (ArrayList<Variable>)multiple;
+                                                                                //Agregamos Tipo
+                                                                                String type = String.valueOf(tipo);
+                                                                                for(int index=0; index<variables.size(); index++){
+                                                                                        variables.get(index).setType(type);
+                                                                                }
+                                                                                ArrayList<Parameter> parametros = (ArrayList<Parameter>)valor;
+                                                                                if(parametros.size()>1){
+                                                                                        if(variables.size()==parametros.size()){
+                                                                                                for(int index=0; index<variables.size(); index++){
+                                                                                                        if(parametros.get(index).getParameter().equalsIgnoreCase(type)){
+                                                                                                                variables.get(index).setValue(parametros.get(index).value,
+                                                                                                                parametros.get(index).line, parametros.get(index).column);
+                                                                                                        }else{
+                                                                                                               ErorrHandler.semanticErrorsScript(new SemanticError("Valores incompatibles "+type+" no se puede convertir a "+parametros.get(index).getParameter(),"Asignaciones","Hacer que coincidan las asignaciones con las variables",cur_token.left+line, cur_token.right+column)); 
+                                                                                                        }
+                                                                                                }
+                                                                                        }else{
+                                                                                                ErorrHandler.semanticErrorsScript(new SemanticError("La cantidad de parametros introducidos no concide con la variable","Asignaciones","Hacer que coincidan las asignaciones con las variables",cur_token.left+line, cur_token.right+column));
+                                                                                        }
+                                                                                }else{
+                                                                                        for(int index=0; index<variables.size(); index++){
+                                                                                                if(parametros.get(index).getParameter().equalsIgnoreCase(type)){
+                                                                                                        variables.get(index).setValue(parametros.get(0).value);
+                                                                                                }else{
+                                                                                                        ErorrHandler.semanticErrorsScript(new SemanticError("Valores incompatibles "+type+" no se puede convertir a "+parametros.get(index).getParameter(),"Asignaciones","Hacer que coincidan las asignaciones con las variables",cur_token.left+line, cur_token.right+column)); 
+                                                                                                        break;
+                                                                                                }
+                                                                                        }
+                                                                                }
+                                                                                //INCLUIRLA EN LA TABLA DE SIMBOLOS
+                                                                                
+                                                                                SymbolV newSymbol = new SymbolV("");
+                                                                                symbolTable.add();
+                                                                                RESULT = variables;
+                                                                        }
+                                                                }
+                                                                :}
+                |variable:multiple declaration:valor {:
+                                                if(multiple!=null && valor!=null){
+                                                        if(multiple instanceof ArrayList){
+                                                                if(valor instanceof ArrayList){
+                                                                        ArrayList<Variable> variables = (ArrayList<Variable>)multiple;
+                                                                        ArrayList<Parameter> parametros = (ArrayList<Parameter>)valor;
+                                                                        symbolTable.updateValue(variables, parametros);
+                                                                        RESULT = variables;
+                                                                }
+                                                        }
+                                                }
+                :}; //just update
+
+type ::= INTEGER:f {:RESULT=f;:}
+        |DECIMAL:f {:RESULT=f;:}
+        |BOOLEAN:f {:RESULT=f;:}
+        |STRINGVAR:f {:RESULT=f;:}
+        |CHAR:f {:RESULT=f;:};
+
+declaration ::= assignations:f {:RESULT=f;:};
+
+//assignations
+
+assignations ::= expression:e COLON {:
+                        if(igualacion){
+                                ArrayList<Parameter> parameters = new ArrayList();
+                                Helper helper = new Helper();
+                                String type = helper.getType(e);
+                                Parameter parametro = new Parameter(type);
+                                //check this part
+                                parametro.setRawValue();
+                                RESULT = parameters;
+                        }else{
+                                parser.report_error("Se esperaba ;","Error Sintactico");
+                        }   
+                                :}
+                |moreassignations {:RESULT=e;:};
+
+moreassignations ::= expression:left AND expression:right assignations:params {:
+                        if(igualacion){
+                                if(params!=null){
+                                        if(params instanceof ArrayList){
+                                                ArrayList<Parameter> parameters = (ArrayList<Parameter>)params;
+                                                Helper helper = new Helper();
+                                                String type = helper.getType(left);
+                                                Parameter leftParameter = new Parameter(type);
+                                                type = helper.getType(right);
+                                                Parameter rightParameter = new Parameter(type);
+                                                leftParameter.setRawValue(String.valueOf(left));
+                                                rightParameter.setRawValue(String.valueOf(right));
+                                        }
+                                }
+                        }else{
+                                parser.report_error("se esperaba ;","Error Sintactico")
+                        }
+                                                                :}
+                |COLON {: ArrayList<Parameter> parameters = new ArrayList(); RESULT=parameters;:}
+                |expression error expression assignations {: parser.report_error("Falta &&" , "Error Sintactico");:}
+                |error;
+
+expression ::=  op:e {: 
+                RESULT=e;
+                :}
+                |GETELEMENT OPEN_PARENTHESIS SYMCHAR:f CLOSE_PARENTHESIS {:                
+                Parameter parameter = new Parameter("string"); 
+                parameter.setPosition(Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                String string = String.valueOf(f);
+                if(string.charAt(0)=='\'' && string.charAt(string.length()-1)=='\'' ){
+                        string = string.substring(1, string.length()-1);
+`               }
+                parameter.setValue("document.getElemenById(\""+string+"\").value;");
+                RESULT=parameter;                
+                :}
+                |GETELEMENT error SYMCHAR CLOSE_PARENTHESIS {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |GETELEMENT OPEN_PARENTHESIS error CLOSE_PARENTHESIS{:parser.report_error("Se esperaba un char" , "Error Sintactico");:}
+                |GETELEMENT OPEN_PARENTHESIS SYMCHAR error {:parser.report_error("Se esperaba )" , "Error Sintactico");:};
+
+//condicion IF
+
+if ::= block_if elseif else;
+
+elseif ::= elseif block_elseif
+        |/*empty*/;
+
+else ::= ELSE instruccionif
+        |/*empty*/;
+
+block_elseif ::= ELSE IF OPEN_PARENTHESIS condition THEN instruccion
+                |ELSE error OPEN_PARENTHESIS condition THEN instruccion {:parser.report_error("No se encontro la expresion IF" , "Error Sintactico");:}
+                |ELSE IF error condition THEN instruccion{:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |ELSE IF OPEN_PARENTHESIS  condition error instruccion{:parser.report_error("No se encontro la expresion THEN" , "Error Sintactico");:};
+
+
+block_if ::= IF OPEN_PARENTHESIS condition THEN instruccion
+                |IF error condition THEN instruccion {:parser.report_error("Se esperaba (" , "Error Sintactico");:}
+                |IF OPEN_PARENTHESIS condition error instruccion {:parser.report_error("No se encontro la expresion THEN" , "Error Sintactico");:};
+
+
+//condicion 
+
+comparation ::= comparation EQUALIZATION comparation
+                |comparation DIFFERENTIATION comparation
+                |comparation LESSTHAN comparation
+                |comparation LESS comparation
+                |comparation GREATERTHAN comparation
+                |comparation GREATER comparation
+                |OPEN_PARENTHESIS comparation CLOSE_PARENTHESIS
+                |op;
+
+condition ::= comparation condition_re;
+
+condition_re ::= AND comparation condition_re
+                |OR comparation condition_re
+                |NOT comparation condition_re
+                |CLOSE_PARENTHESIS
+                |error comparation condition_re {:parser.report_error("Se esperaba un operador logico (&&, ||, !) o un )" , "Error Sintactico");:};
+        
+//instruccion
+instruccion ::= INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY END
+                |INIT error SEMICOLON codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba {" , "Error Sintactico");:}
+                |INIT OPEN_CURLY error codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON error  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  error END {:parser.report_error("Se esperaba }" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY error {:parser.report_error("Falta END" , "Error Sintactico");:}
+                |linecode;
+
+instruccionif ::= INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY END
+                |INIT error SEMICOLON codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba {" , "Error Sintactico");:}
+                |INIT OPEN_CURLY error codigo  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON error  CLOSE_CURLY END {:parser.report_error("Se esperaba :" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  error END {:parser.report_error("Se esperaba }" , "Error Sintactico");:}
+                |INIT OPEN_CURLY SEMICOLON codigo  CLOSE_CURLY error {:parser.report_error("Falta END" , "Error Sintactico");:}
+                |linecodeif;
+
+//REPEAT
+repeat ::= REPEAT OPEN_PARENTHESIS declarations CLOSE_PARENTHESIS huntil
+        |REPEAT error declarations CLOSE_PARENTHESIS huntil {:parser.report_error("Falta (" , "Error Sintactico");:}
+        |REPEAT OPEN_PARENTHESIS declarations error huntil {:parser.report_error("Falta )" , "Error Sintactico");:};
+
+huntil ::= HUNTIL OPEN_PARENTHESIS op CLOSE_PARENTHESIS instruccion
+        |error OPEN_PARENTHESIS op CLOSE_PARENTHESIS instruccion {:parser.report_error("Se esperaba la palabra HUNTIL" , "Error Sintactico");:}
+        |HUNTIL error op CLOSE_PARENTHESIS instruccion {:parser.report_error("Falta (" , "Error Sintactico");:}
+        |HUNTIL OPEN_PARENTHESIS op error instruccion {:parser.report_error("Falta )" , "Error Sintactico");:};
+
+//WHILE
+while ::= WHILE OPEN_PARENTHESIS condition CLOSE_PARENTHESIS THENWHILE instruccion
+        |WHILE error condition CLOSE_PARENTHESIS THENWHILE instruccion {:parser.report_error("Falta (" , "Error Sintactico");:}
+        | WHILE OPEN_PARENTHESIS condition error THENWHILE instruccion {:parser.report_error("Falta )" , "Error Sintactico");:}
+        |WHILE OPEN_PARENTHESIS condition CLOSE_PARENTHESIS error instruccion {:parser.report_error("Se esperaba THENWHILE" , "Error Sintactico");:} ;
+
+//Funciones ESPECIALES
+specfunction ::= ASC OPEN_PARENTHESIS op:f CLOSE_PARENTHESIS {:
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                parameter.setPosition(cur_token.left+line, cur_toke.right+column);
+                                                                parameter.setRawValue(function.ASC(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |DESC OPEN_PARENTHESIS op:f CLOSE_PARENTHESIS{:
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.DESC(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |LETPAR_NUM OPEN_PARENTHESIS op:f CLOSE_PARENTHESIS {:
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                //FLAG
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.LETPAR_NUM(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |LETIMPAR_NUM OPEN_PARENTHESIS op:f CLOSE_PARENTHESIS{:
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                //FLAG
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.LETIMPAR_NUM(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |REVERSE OPEN_PARENTHESIS op:f CLOSE_PARENTHESIS{:
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.REVERSE(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |CARACTER_ALEATORIO OPEN_PARENTHESIS CLOSE_PARENTHESIS{:
+                                                                //Devuelve String en formato 'char'
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.RandChar(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                |NUM_ALEATORIO OPEN_PARENTHESIS CLOSE_PARENTHESIS{:
+                                                                //Devuelve un numero entero
+                                                                //Devuelve String
+                                                                SpecFunctions function = new SpecFunctions();
+                                                                Parameter parameter = new Parameter("string");
+                                                                parameter.setPosition(cur_token.left+line, cur_token.right+column);
+                                                                parameter.setRawValue(function.RandInt(String.valueOf(f)));
+                                                                RESULT = parameter;
+                                                                :}
+                ;
+
+specactions ::= ALERT_INFO OPEN_PARENTHESIS op CLOSE_PARENTHESIS COLON
+                |EXIT OPEN_PARENTHESIS CLOSE_PARENTHESIS COLON
+                |INSERT OPEN_PARENTHESIS SYMCHAR CLOSE_PARENTHESIS COLON;

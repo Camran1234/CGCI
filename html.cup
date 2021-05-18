@@ -1,0 +1,747 @@
+package com.chtml.html;
+import com.chtml.tag.*;
+import com.chtml.table.*;
+import com.chtml.error.*;
+import java_cup.runtime.XMLElement;
+import java_cup.runtime.Symbol;
+import java.util.ArrayList;
+
+
+parser code {:
+
+        ErrorHandler errorHandler = new ErrorHandler();
+        HtmlData htmlData = new HtmlData();
+        SymbolTable table = new SymbolTable();
+        public int errors = 0;
+        int lineError=0; 
+        int columnError=0;
+        String tokenError = "";
+        String expectedTokens = "";
+
+        public HtmlData getHtmlData(){
+                return htmlData;
+        }
+
+        //Method to throw Errors
+        public void report_error(String message, Object info) { 
+                if (info instanceof String){
+        	        Symbol s = cur_token;
+	                errors++;       
+                        if(message.equalsIgnoreCase(".")){
+                                message = "Se esperaba alguna forma como "+expectedTokens;
+                        }
+                        System.err.println("  "+ errors + "==> " + info + " en "+tokenError+": "+ message + " [linea: "+lineError+" columna: "+columnError+"]");
+                        SemanticError error = new SemanticError(message, tokenError, (String)info, lineError, columnError);
+                        errorHandler.add(error);
+                }
+                else {
+    	                StringBuffer m = new StringBuffer("Error ");
+    	                if (info instanceof java_cup.runtime.Symbol) 
+     	                        m.append( "("+info.toString()+")" );     
+    	                        m.append(" : "+message);   
+    	                System.err.println(m);
+    }
+}
+
+public void report_error_final(String message, Object info){
+    if (info instanceof String){
+	Symbol s = cur_token;
+	errors++;       
+        
+        if(message.equalsIgnoreCase(".")){
+                message = "Se esperaba alguna forma como "+expectedTokens;
+        }
+        System.err.println("  "+ errors + "==> " + info + " en "+tokenError+": "+ message + " [linea: "+lineError+" columna: "+columnError+"]");
+    }
+    else {
+    	StringBuffer m = new StringBuffer("Error ");
+    	if (info instanceof java_cup.runtime.Symbol) 
+     	   m.append( "("+info.toString()+")" );     
+    	m.append(" : "+message);   
+    	System.err.println(m);
+    }
+}
+       
+       @Override
+	public void syntax_error(Symbol symbol){
+	    int line = symbol.left;
+	    int column = symbol.right;
+	    String token = (String) cur_token.value;        new SymbolTable();
+            tokenError = token;
+            lineError = line;
+            columnError = column;
+            expectedTokens = "";
+            for(int index=0; index<expected_token_ids().size() ; index++){
+                //We traduce the token to a form that the user might understand
+                expectedTokens += symbl_name_from_id(expected_token_ids().get(index));
+				expectedTokens += ", ";
+            }
+	}
+
+@Override
+	public void unrecovered_syntax_error(Symbol symbol){
+                report_error_final(".", "Error Sintactico");
+	}
+
+:}
+
+terminal LESS, GREATER, DIV, OPEN_PARENTHESIS, CLOSE_PARENTHESIS, EQUAL, C_SCRIPTING, C_GCIC, C_HEAD, C_TITLE, C_LINK,
+C_BODY, C_SPAM, C_INPUT, C_TEXTAREA, C_SELECT, C_OPTION, C_DIV, C_IMG, C_BR, C_BUTTON, C_H1, C_P, HREF, BACKGROUND, COLOR,
+FONTSIZE, FONTFAMILY, TEXTALIGN, TYPE, TEXT, NUMBER, RADIO, CHECKBOX, IDE, NAME, COLS, ROWS, CLASS, ROW, COLUMNS, SRC, WIDTH,
+HEIGHT, ALT, ONCLICK, SPACE, OPTION, STRING, OPEN_BRACKET, CLOSE_BRACKET,CHAR;
+
+non terminal w, tags, starttag, text, s, t, o, startetiquete, etiquete, optionselec, scripts, scriptf, htmls, htmlf, heads, headf, titles, 
+titlef, links, linkf, bodys, bodyf, spams, spamf, inputs, inputf, textars, textarf, selects, selectf, options, optionf,
+divs, divf, images, imagef, brs, buttons, buttonf, htexts, htextf, ps, pf, phtml, plink, pbody, pspam, pinput, ptextar, pselect,
+pdiv, pimg, pbutton, phtext, pp, plaintetiquete, plainparemeter, plaintext, tags_re, optionselec_re, o_a,
+plaintexto, texto, prand;
+
+precedence left LESS;
+
+start with s;
+
+//White spaces text
+w ::=SPACE w
+    |/*empty*/;
+
+//plaintext
+
+tags ::= LESS tags_re:e  {: if(e!=null){RESULT=e;} :};
+
+tags_re ::= etiquete:et t:el {:
+                                if(el!=null){
+                                        if(el instanceof ArrayList){
+                                                //etiquete must return a tag
+                                                ArrayList<Tag> array = (ArrayList<Tag>)el;
+                                                array.add((Tag)et);
+                                                RESULT = array;
+                                        }
+                                        RESULT = el;
+                                }
+:}
+                |DIV {:
+                 ArrayList<Tag> auxiliar = new ArrayList();
+                 RESULT = auxiliar; :};
+
+starttag ::= LESS startetiquete:e1 {:RESULT =e1;:};
+
+plaintext ::= text:e1   {:RESULT=e1;:} 
+            ;
+
+text ::= GREATER:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |DIV:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |OPTION:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |OPEN_PARENTHESIS:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |CLOSE_PARENTHESIS:e1  {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |OPEN_BRACKET:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |CLOSE_BRACKET:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |EQUAL:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |plaintetiquete:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |plainparemeter:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |ONCLICK:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:}
+        |SPACE:e1 {:RESULT=new CText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));:};
+
+plaintexto ::= texto:e1   {:RESULT=e1;:} ;
+
+texto ::= GREATER:e1 {:RESULT=e1;:}
+        |OPTION:e1 {:RESULT=e1;:}
+        |OPEN_PARENTHESIS:e1 {:RESULT=e1;:}
+        |CLOSE_PARENTHESIS:e1  {:RESULT=e1;:}
+        |OPEN_BRACKET:e1 {:RESULT=e1;:}
+        |CLOSE_BRACKET:e1 {:RESULT=e1;:}
+        |EQUAL:e1 {:RESULT=e1;:}
+        |plaintetiquete:e1 {:RESULT=e1;:}
+        |plainparemeter:e1 {:RESULT=e1;:}
+        |ONCLICK:e1 {:RESULT=e1;:}
+        |SPACE:e1 {:RESULT=e1;:};
+
+//structures
+
+s ::= plaintext:e1 s:e2 {:
+                                if(e1 instanceof CText){
+                                        htmlData.pushTag((Tag)e1);
+                                }
+                                if(e2!=null){
+                                      htmlData.pushTag((Tag)e2);
+                                }
+                        :}
+    |starttag:e1   s:e2     {: if(e1!=null){htmlData.pushTag((Tag)e1);}
+                                if(e2 != null){
+                                        htmlData.pushTag((Tag)e2);
+                                }
+     :}
+    |/*empty*/;
+
+t ::= plaintext:e1 t:e2  {: if(e2!=null){
+                                if(e2 instanceof ArrayList){
+                                        ArrayList<Tag> array = (ArrayList<Tag>)e2;
+                                        array.add((Tag)e1);
+                                        RESULT = array;
+                                }
+                                RESULT = e2;
+                        }
+                        :}
+    |tags:e {:RESULT=e;:};
+
+/*Usar para la cadena del script*/
+o ::= plaintexto:e1 o:e2 {:
+                        if(e2 !=null){
+                                RESULT = String.valueOf(e1) + String.valueOf(e2);
+                        }else{
+                                RESULT = e1;
+                        }
+                         :}
+    |LESS:e1 o_a:e2  {: 
+                if(e2!=null){
+                        RESULT= String.valueOf(e1) + String.valueOf(e2);
+                }else{
+                        RESULT="";
+                }
+     :}
+     |DIV:e1 o:e2 {:
+                if(e2 !=null){
+                        RESULT = String.valueOf(e1) + String.valueOf(e2);
+                }else{
+                        RESULT = e1;
+                }
+     
+     :}
+    ;
+
+o_a ::=  DIV 
+        |plaintexto:e1 o:e2 {: 
+                                if(e2 != null){
+                                        RESULT = String.valueOf(e1)+ String.valueOf(e2);
+                                }else{
+                                        RESULT = e1;
+                                }
+        
+         :}
+        ;
+
+startetiquete ::= htmls:s t:tags htmlf {:
+                                                if(s instanceof CGcic){
+                                                        CGcic ctag = (CGcic)s;
+                                                        ctag.pushTags((ArrayList)tags);
+                                                        RESULT = ctag;
+                                                }
+                                                RESULT = s;                                                
+                                        :}
+                |etiquete:s   {:
+                                RESULT = s;
+                                :};
+
+//left tag will be the object
+etiquete ::= heads:tag t:e1 headf    {: CHead head = (CHead)tag; head.pushTags((ArrayList<Tag>)e1); RESULT = head;:}  
+            |heads:tag t:e1 error t:r    {: CHead head = (CHead)tag; head.pushTags((ArrayList<Tag>)e1) ; head.pushTags((ArrayList<Tag>)r); RESULT = head;:}  
+            |titles:tag t:e1 titlef    {: CTitle title = (CTitle)tag; title.pushTags((ArrayList<Tag>)e1); RESULT = title;:}  
+            |titles:tag t:e1 error t:r {: CTitle title = (CTitle)tag; title.pushTags((ArrayList<Tag>)e1); title.pushTags((ArrayList<Tag>)r); RESULT = title;:}  
+            |links:tag t:e1 linkf      {: CLink link = (CLink)tag; link.pushTags((ArrayList<Tag>)e1); RESULT = link;:}  
+            |links:tag t:e1 error  t:r   {: CLink link = (CLink)tag; link.pushTags((ArrayList<Tag>)e1);link.pushTags((ArrayList<Tag>)r); RESULT = link;:}  
+            |bodys:tag t:e1 bodyf      {: CBody body = (CBody)tag; body.pushTags((ArrayList<Tag>)e1); RESULT = body;:}  
+            |bodys:tag t:e1 error  t:r   {: CBody body = (CBody)tag; body.pushTags((ArrayList<Tag>)e1);body.pushTags((ArrayList<Tag>)r); RESULT = body;:}  
+            |spams:tag t:e1 spamf     {: CSpam spam = (CSpam)tag; spam.pushTags((ArrayList<Tag>)e1); RESULT = spam;:}   
+            |spams:tag t:e1 error  t:r   {: CSpam spam = (CSpam)tag; spam.pushTags((ArrayList<Tag>)e1);spam.pushTags((ArrayList<Tag>)r); RESULT = spam;:}  
+            |inputs:tag t:e1 inputf    {: CInput input = (CInput)tag; input.pushTags((ArrayList<Tag>)e1); RESULT = input;:}  
+            |inputs:tag t:e1 error  t:r  {: CInput input = (CInput)tag; input.pushTags((ArrayList<Tag>)e1);input.pushTags((ArrayList<Tag>)r); RESULT = input;:}  
+            |textars:tag t:e1 textarf  {: CTextArea area = (CTextArea)tag; area.pushTags((ArrayList<Tag>)e1); RESULT = area;:}  
+            |textars:tag t:e1 error t:r  {: CTextArea area = (CTextArea)tag; area.pushTags((ArrayList<Tag>)e1);area.pushTags((ArrayList<Tag>)r); RESULT = area;:}  
+            |selects:tag optionselec:e1 selectf  {: CSelect select = (CSelect)tag; select.pushTags((ArrayList<Tag>)e1); RESULT = select;:}  
+            |selects:tag optionselec:e1 error optionselec:r {: CSelect select = (CSelect)tag; select.pushTags((ArrayList<Tag>)e1);select.pushTags((ArrayList<Tag>)r); RESULT = select;:}  
+            |scripts:tag o:e1 scriptf  {:CScripting script = (CScripting)tag; script.setText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right)); RESULT = script;:}  
+            |scripts:tag o:e1 error o:r {:CScripting script = (CScripting)tag; script.setText(String.valueOf(e1)+String.valueOf(r),Integer.toString(cur_token.left),Integer.toString(cur_token.right)); RESULT = script;:}  
+            |divs:tag t:e1 divf        {: CDiv div = (CDiv)tag; div.pushTags((ArrayList<Tag>)e1); RESULT = div;:}  
+            |divs:tag t:e1 error t:r     {: CDiv div = (CDiv)tag; div.pushTags((ArrayList<Tag>)e1);div.pushTags((ArrayList<Tag>)r); RESULT = div;:}  
+            |images:tag t:e1 imagef     {: CImg img = (CImg)tag; img.pushTags((ArrayList<Tag>)e1); RESULT = img;:}      
+            |images:tag t:e1 error t:r    {: CImg img = (CImg)tag; img.pushTags((ArrayList<Tag>)e1);img.pushTags((ArrayList<Tag>)r); RESULT = img;:}  
+            |brs:tag      {: CBr br = (CBr)tag;RESULT = br;:}  
+            |buttons:tag t:e1 buttonf  {: CButton button = (CButton)tag; button.pushTags((ArrayList<Tag>)e1); RESULT = button;:}  
+            |buttons:tag t:e1 error t:r    {: CButton button = (CButton)tag; button.pushTags((ArrayList<Tag>)e1);button.pushTags((ArrayList<Tag>)r); RESULT = button;:}  
+            |htexts:tag t:e1 htextf    {: CH1 h1 = (CH1)tag ; h1.pushTags((ArrayList<Tag>)e1); RESULT = h1;:}  
+            |htexts:tag t:e1 error t:r  {: CH1 h1 = (CH1)tag ; h1.pushTags((ArrayList<Tag>)e1);h1.pushTags((ArrayList<Tag>)r); RESULT = h1;:}  
+            |ps:tag t:e1 pf    {: CP cp = (CP)tag; cp.pushTags((ArrayList<Tag>)e1); RESULT = cp;:}  
+            |ps:tag t:e1 error t:r      {: CP cp = (CP)tag; cp.pushTags((ArrayList<Tag>)e1);cp.pushTags((ArrayList<Tag>)r); RESULT = cp;:}  
+            |error ;
+
+optionselec ::= LESS optionselec_re:e {:RESULT=e;:}
+                |plaintext:e1 optionselec:e2
+                {:
+                        if(e2 !=null){
+                                if(e2 instanceof ArrayList){
+                                        ArrayList<Tag> array = (ArrayList<Tag>)e2;
+                                        array.add((Tag)e1);
+                                        RESULT=array;
+                                }
+                                RESULT = e2;
+                        }else{
+                                System.out.println("Something");
+                                RESULT = e1;
+                        }
+                         :}
+                ;
+
+
+optionselec_re ::= options:op o:e1 optionf optionselec:e2 {:if(e2 instanceof ArrayList){
+                                                                        ArrayList<Tag> tags = (ArrayList<Tag>)e2;
+                                                                        COption option = (COption)op;
+                                                                        option.setText(String.valueOf(e1),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                        tags.add(option);
+                                                                        RESULT=tags;
+                                                                }
+:}
+                | options:op o:e1 error optionselec:e2 {:RESULT = e2;:}
+                |error optionf optionselec:e2 {:RESULT=e2;:}
+                |DIV {: System.out.println("Here");ArrayList<Tag> array = new ArrayList(); RESULT = array; :};
+
+
+
+//Tags
+
+scripts ::= C_SCRIPTING w prand {:System.out.println("START");RESULT = new CScripting();:};
+
+scriptf ::=  C_SCRIPTING w GREATER ;
+
+htmls ::= C_GCIC phtml:et  {:RESULT=et;:};
+
+htmlf ::=  C_GCIC w GREATER ;
+
+heads ::= C_HEAD w prand {:RESULT = new CHead();:};
+
+headf ::=  C_HEAD w GREATER ;
+
+titles ::= C_TITLE w prand {:RESULT = new CTitle();:};
+
+titlef ::=  C_TITLE w GREATER;
+
+links ::= C_LINK plink:et {:RESULT=et;:};
+
+linkf ::=  C_LINK w GREATER;
+
+bodys ::= C_BODY pbody:et {:RESULT=et;:};
+
+bodyf ::=  C_BODY w GREATER;
+
+spams ::= C_SPAM pspam:et {:RESULT=et;:};
+
+spamf ::=  C_SPAM w GREATER;
+
+inputs ::= C_INPUT pinput:et {:RESULT=et;:};
+
+inputf ::=  C_INPUT w GREATER;
+
+textars ::= C_TEXTAREA ptextar:et {:RESULT=et;:};
+
+textarf ::=  C_TEXTAREA w GREATER ;  
+
+selects ::= C_SELECT pselect:et {:RESULT=et;:};
+
+selectf ::=  C_SELECT w GREATER;
+
+options ::= C_OPTION w prand {:RESULT = new COption();:};
+
+optionf ::=  C_OPTION w GREATER;
+
+divs ::= C_DIV pdiv:et {:RESULT=et;:};
+
+divf ::=  C_DIV w GREATER;
+
+images ::= C_IMG pimg:et {:RESULT=et;:};
+
+imagef ::=  C_IMG w GREATER;
+
+brs ::= C_BR w prand {:RESULT = new CBr();:};
+
+buttons ::= C_BUTTON pbutton:et {:RESULT=et;:};
+
+buttonf ::=  C_BUTTON w GREATER;
+
+htexts ::= C_H1 phtext:et {:RESULT=et;:};
+
+htextf ::=  C_H1 w GREATER;
+
+ps ::= C_P pp:et {:RESULT=et;:};
+
+pf ::=  C_P w GREATER;
+
+//etiquetas
+
+prand ::= error prand {: parser.report_error("Se esperaba cierre de etiqueta, parametro no valido" , "Error Sintactico"); :}
+        |GREATER;
+
+phtml ::=OPEN_BRACKET w IDE w EQUAL w STRING:id w CLOSE_BRACKET phtml:html {: if(html instanceof CGcic) {
+                                                                                CGcic gcic = (CGcic)html;
+                                                                                gcic.setId(String.valueOf(id),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                RESULT = gcic;}:}
+                                                                                
+                                                                                
+        |OPEN_BRACKET w NAME w EQUAL w STRING:name w CLOSE_BRACKET phtml:html {: if(html instanceof CGcic) {
+                                                                                CGcic gcic = (CGcic)html;
+                                                                                gcic.setName(String.valueOf(name),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                RESULT = gcic;
+                                                                                }:}
+                                                                                
+                                                                                
+                                                                                
+        |SPACE phtml:p {: RESULT=p; :}
+        |GREATER {: RESULT=new CGcic();  :}
+        |error phtml:t {:parser.report_error("Se esperaba una declaracion de parametros o cierre, parametros validos:id, name ", "Error Sintactico");RESULT = t;:};
+
+plink ::= OPEN_BRACKET w HREF w EQUAL w STRING:href w CLOSE_BRACKET plink:link {: if(link instanceof CLink) {
+
+                                                                                CLink clink = (CLink)link;
+                                                                                clink.setHref(String.valueOf(href),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                RESULT = clink;
+                                                                                }:}
+                                                                                
+        | SPACE plink:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CLink();:}
+        |error plink: link {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:href" , "Error Sintactico");RESULT = link;:};
+
+pbody ::= OPEN_BRACKET w BACKGROUND w EQUAL w STRING:color w CLOSE_BRACKET pbody:body {: if(body instanceof CBody) {
+                                                                                        CBody cbody = (CBody)body;
+                                                                                        cbody.setBackground(String.valueOf(color),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbody;
+                                                                                        }:}
+                                                                                        
+                                                                                
+        |SPACE pbody:p {: RESULT=p; :}
+        |GREATER {: RESULT=new CBody(); :}
+        |error pbody:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:background" , "Error Sintactico");RESULT = t;:};
+
+pspam ::= OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pspam:span {: if(span instanceof CSpam) {
+                                                                                        CSpam spam = (CSpam)span;
+                                                                                        spam.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =spam;
+                                                                                        }:}
+                                                                                        
+        |OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pspam:span {: if(span instanceof CSpam) {
+                                                                                        CSpam spam = (CSpam)span;
+                                                                                        spam.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =spam;
+                                                                                        }:}
+                                                                                        
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pspam:span {: if(span instanceof CSpam) {
+                                                                                        CSpam spam = (CSpam)span;
+                                                                                        spam.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =spam;}:}
+                                                                                        
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pspam:span {: if(span instanceof CSpam) {
+                                                                                        CSpam spam = (CSpam)span;
+                                                                                        spam.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =spam;
+                                                                                        }:}
+                                                                                        
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pspam:span {: if(span instanceof CSpam) {
+                                                                                        CSpam spam = (CSpam)span;
+                                                                                        spam.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =spam;
+                                                                                        }:}
+                                                                                        
+        |SPACE pspam:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CSpam();:}
+        |error pspam:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:color, font-size, font-family, text-align, id" , "Error Sintactico");RESULT = t;:};
+
+pinput ::= OPEN_BRACKET w TYPE w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput){
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setType(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;
+                                                                                        }:}
+                                                                                        
+        |OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput) {
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;}:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput) {
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;}:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput) {
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;}:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput) {
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;}:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pinput:input {: if(input instanceof CInput) {
+                                                                                        CInput cinput = (CInput)input;
+                                                                                        cinput.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cinput;}:}
+        |SPACE pinput:p {: RESULT=p; :}
+        |GREATER {:RESULT = new CInput();:}
+        |error pinput:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos: type, font-size, font-family, text-align, id, color" , "Error Sintactico");RESULT = t;:};
+
+ptextar ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {: if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =area;
+                                                                                        }:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {: if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =area;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {:  if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =area;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {: if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = area;
+                                                                                        }:}
+        |OPEN_BRACKET w COLS w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {: if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setCols(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =area;
+                                                                                        }:}
+        |OPEN_BRACKET w ROWS w EQUAL w STRING:string w CLOSE_BRACKET ptextar:text {: if(text instanceof CTextArea) {
+                                                                                        CTextArea area = (CTextArea)text;
+                                                                                        area.setRows(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =area;
+                                                                                        }:}
+        |SPACE ptextar:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CTextArea();:}
+        |error ptextar:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, cols, rows" , "Error Sintactico");RESULT = t;:};
+
+
+pselect ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pselect:select {: if(select instanceof CSelect){
+                                                                                        CSelect cselect = (CSelect)select;
+                                                                                        cselect.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cselect;
+                                                                                        }:} 
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pselect:select {: if(select instanceof CSelect) {
+                                                                                        CSelect cselect = (CSelect)select;
+                                                                                        cselect.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cselect;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pselect:select {: if(select instanceof CSelect) {
+                                                                                        CSelect cselect = (CSelect)select;
+                                                                                        cselect.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cselect;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pselect:select {: if(select instanceof CSelect) {
+                                                                                        CSelect cselect = (CSelect)select;
+                                                                                        cselect.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cselect;
+                                                                                        }:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pselect:select {: if(select instanceof CSelect) {
+                                                                                        CSelect cselect = (CSelect)select;
+                                                                                        cselect.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cselect;
+                                                                                        }:}
+        |SPACE pselect:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CSelect(); :}
+        |error pselect:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, color" , "Error Sintactico");RESULT = t;:};
+
+pdiv ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w CLASS w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setClass(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |OPEN_BRACKET w BACKGROUND w EQUAL w STRING:string w CLOSE_BRACKET pdiv:div {: if(div instanceof CDiv) {
+                                                                                        CDiv cdiv = (CDiv)div;
+                                                                                        cdiv.setBackground(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cdiv;
+                                                                                        }:}
+        |SPACE pdiv:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CDiv();:}
+        |error pdiv:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, color, class, background" , "Error Sintactico");RESULT = t;:};
+
+
+pimg ::= OPEN_BRACKET w SRC w EQUAL w STRING:string w CLOSE_BRACKET pimg:img {: if(img instanceof CImg) {
+                                                                                        CImg cimg = (CImg)img;
+                                                                                        cimg.setSrc(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cimg;
+                                                                                        }:}
+        |OPEN_BRACKET w WIDTH w EQUAL w STRING:string w CLOSE_BRACKET pimg:img {: if(img instanceof CImg) {
+                                                                                        CImg cimg = (CImg)img;
+                                                                                        cimg.setWidth(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cimg;
+                                                                                        }:}
+        |OPEN_BRACKET w HEIGHT w EQUAL w STRING:string w CLOSE_BRACKET pimg:img {: if(img instanceof CImg) {
+                                                                                        CImg cimg = (CImg)img;
+                                                                                        cimg.setHeight(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cimg;
+                                                                                        }:}
+        |OPEN_BRACKET w ALT w EQUAL w STRING:string w CLOSE_BRACKET pimg:img {: if(img instanceof CImg) {
+                                                                                        CImg cimg = (CImg)img;
+                                                                                        cimg.setAlt(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cimg;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pimg:img {: if(img instanceof CImg) {
+                                                                                        CImg cimg = (CImg)img;
+                                                                                        cimg.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cimg;
+                                                                                        }:}
+        |SPACE pimg:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CImg(); :}
+        |error pimg:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:src, width, height, alt, id" , "Error Sintactico");RESULT = t;:};
+
+pbutton ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {: if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {: if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {: if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {:if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {: if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w ONCLICK w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {:if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setOnClick(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |OPEN_BRACKET w BACKGROUND w EQUAL w STRING:string w CLOSE_BRACKET pbutton:button {: if(button instanceof CButton) {
+                                                                                        CButton cbutton = (CButton)button;
+                                                                                        cbutton.setBackground(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =cbutton;
+                                                                                        }:}
+        |SPACE pbutton:p {: RESULT=p; :}
+        |GREATER {: RESULT=new CButton();:}
+        |error pbutton:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, color, onclick, background" , "Error Sintactico");RESULT = t;:};
+
+phtext ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET phtext:h {: if(h instanceof CH1) {
+                                                                                        CH1 ch1 = (CH1)h;
+                                                                                        ch1.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =ch1;
+                                                                                        }:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET phtext:h {: if(h instanceof CH1) {
+                                                                                        CH1 ch1 = (CH1)h;
+                                                                                        ch1.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =ch1;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET phtext:h {: if(h instanceof CH1) {
+                                                                                        CH1 ch1 = (CH1)h;
+                                                                                        ch1.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =ch1;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET phtext:h {: if(h instanceof CH1) {
+                                                                                        CH1 ch1 = (CH1)h;
+                                                                                        ch1.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =ch1;
+                                                                                        }:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET phtext:h {: if(h instanceof CH1) {
+                                                                                        CH1 ch1 = (CH1)h;
+                                                                                        ch1.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT =ch1;
+                                                                                        }:}
+        |SPACE phtext:p {: RESULT=p; :}
+        |GREATER {: RESULT= new CH1();:}
+        |error phtext:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, color" , "Error Sintactico");RESULT = t;:};
+
+pp ::= OPEN_BRACKET w FONTSIZE w EQUAL w STRING:string w CLOSE_BRACKET pp:p {:if(p instanceof CP) {
+                                                                                        CP cp = (CP)p;
+                                                                                        cp.setFontSize(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cp;
+                                                                                        }:}
+        |OPEN_BRACKET w FONTFAMILY w EQUAL w STRING:string w CLOSE_BRACKET pp:p {:if(p instanceof CP) {
+                                                                                        CP cp = (CP)p;
+                                                                                        cp.setFontFamily(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cp;
+                                                                                        }:}
+        |OPEN_BRACKET w TEXTALIGN w EQUAL w STRING:string w CLOSE_BRACKET pp:p {:if(p instanceof CP) {
+                                                                                        CP cp = (CP)p;
+                                                                                        cp.setTextAlign(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cp;
+                                                                                        }:}
+        |OPEN_BRACKET w IDE w EQUAL w STRING:string w CLOSE_BRACKET pp:p {:if(p instanceof CP) {
+                                                                                        CP cp = (CP)p;
+                                                                                        cp.setId(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cp;
+                                                                                        }:}
+        |OPEN_BRACKET w COLOR w EQUAL w STRING:string w CLOSE_BRACKET pp:p {:if(p instanceof CP) {
+                                                                                        CP cp = (CP)p;
+                                                                                        cp.setColor(String.valueOf(string),Integer.toString(cur_token.left),Integer.toString(cur_token.right));
+                                                                                        RESULT = cp;
+                                                                                        }:}
+        |SPACE pp:p {: RESULT=p; :}
+        |GREATER {: RESULT = new CP();:}
+        |error pp:t {:parser.report_error("Se esperaba una delcaracion de parametros o cierre, parametros validos:font-size, font-family, text-align, id, color" , "Error Sintactico");RESULT = t;:};
+
+//auxiliar text
+
+plaintetiquete ::= C_SCRIPTING:e1 {:RESULT=e1;:}
+            |C_GCIC:e1 {:RESULT=e1;:}
+            |C_HEAD:e1 {:RESULT=e1;:}
+            |C_TITLE:e1 {:RESULT=e1;:}
+            |C_LINK:e1 {:RESULT=e1;:}
+            |C_BODY:e1 {:RESULT=e1;:}
+            |C_SPAM:e1 {:RESULT=e1;:}
+            |C_INPUT:e1 {:RESULT=e1;:}
+            |C_TEXTAREA:e1 {:RESULT=e1;:}
+            |C_SELECT:e1 {:RESULT=e1;:}
+            |C_OPTION:e1 {:RESULT=e1;:}
+            |C_DIV:e1 {:RESULT=e1;:}
+            |C_IMG:e1 {:RESULT=e1;:}
+            |C_BR:e1 {:RESULT=e1;:}
+            |C_BUTTON:e1 {:RESULT=e1;:}
+            |C_H1:e1 {:RESULT=e1;:}
+            |C_P:e1 {:RESULT=e1;:};
+
+plainparemeter ::= HREF:e1 {:RESULT=e1;:}
+                |BACKGROUND:e1 {:RESULT=e1;:} 
+                |COLOR:e1 {:RESULT=e1;:}
+                |FONTSIZE:e1 {:RESULT=e1;:}
+                |FONTFAMILY:e1 {:RESULT=e1;:}
+                |TEXTALIGN:e1 {:RESULT=e1;:}
+                |TYPE:e1 {:RESULT=e1;:}
+                |TEXT:e1 {:RESULT=e1;:}
+                |NUMBER:e1 {:RESULT=e1;:}
+                |RADIO:e1 {:RESULT=e1;:}
+                |CHECKBOX:e1 {:RESULT=e1;:}
+                |IDE:e1 {:RESULT=e1;:}
+                |NAME:e1 {:RESULT=e1;:}
+                |COLS:e1 {:RESULT=e1;:}
+                |ROWS:e1 {:RESULT=e1;:}
+                |CLASS:e1 {:RESULT=e1;:}
+                |ROW:e1 {:RESULT=e1;:}
+                |COLUMNS:e1 {:RESULT=e1;:}
+                |SRC:e1 {:RESULT=e1;:}
+                |WIDTH:e1 {:RESULT=e1;:}
+                |HEIGHT:e1 {:RESULT=e1;:}
+                |ALT:e1 {:RESULT=e1;:}
+                |STRING:e1 {:RESULT=e1;:}
+                |CHAR:e1 {:RESULT=e1;:};
